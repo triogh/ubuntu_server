@@ -11,7 +11,8 @@ run "alsamixer" command
 -in "alsamixer" make sure output is not muted (MM) 
 -needs to be unmuted (00), "m" toggles mute on and off 
 -also make sure to increase volume to some value above zero
--take note that mute (MM) and volume value, are two separate things, so even if you increase volume in "alsamixer" above zero, but mute (MM) is in effect, you will have no sound
+-take note that mute (MM) and volume value, are two separate things 
+-even if you increase volume in "alsamixer" above zero, but mute (MM) is in effect, you will have no sound
 
 ---
 -the above is based on info found on this URL
