@@ -1,0 +1,17 @@
+Enable sound on fresh Ubuntu install
+
+1.
+sudo apt-get update
+2.
+sudo apt-get install alsa-base pulseaudio
+sudo alsa force-reload
+3.
+run "alsamixer" command
+4.
+-in "alsamixer" make sure output is not muted (MM) 
+-needs to be unmuted (00), "m" toggles mute on and off 
+
+---
+-the above is based on info found on this URL
+http://www.unixmen.com/2012003-howto-resolve-nosound-problem-on-ubuntu/
+-the steps i described above worked for me on Ubuntu 16.04 Xenial
