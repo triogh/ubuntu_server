@@ -1,4 +1,4 @@
-Enable sound on fresh Ubuntu install
+Enable sound on fresh Ubuntu server install
 
 1.
 sudo apt-get update
