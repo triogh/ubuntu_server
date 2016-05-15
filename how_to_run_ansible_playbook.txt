@@ -1,0 +1,8 @@
+-default command
+ansible-playbook {playbook.yml}
+
+-add "-v" for verbosity
+ansible-playbook {playbook.yml} -v
+
+-add "-K" to run with sudo privileges
+ansible-playbook {playbook.yml} -v -K

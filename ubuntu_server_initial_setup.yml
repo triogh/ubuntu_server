@@ -1,0 +1,58 @@
+---
+- hosts: localhost
+  gather_facts: yes
+
+  tasks:
+   - name: Add apt signing key for Google
+     become: True
+     apt_key: url=https://dl.google.com/linux/linux_signing_key.pub state=present
+
+   - name: Add "Google Chrome" repository
+     become: True
+     apt_repository: repo='deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' state=present
+
+   - name: Equivalent of "apt-get update" 
+     become: True
+     apt: update_cache=yes
+
+   - name: Install awesomeWM and xinit
+     become: True
+     apt: name={{item}} state=present
+     with_items:
+      - awesome
+      - libcairo-gobject2
+      - xinit
+
+   - name: Check if "~user/.xinitrc" file exists
+     stat: path={{ ansible_env.HOME }}/.xinitrc
+     register: p
+
+   - name: Create "~user/.xinitrc" file, if not exists
+     file: path={{ ansible_env.HOME }}/.xinitrc state=touch
+     when: not p.stat.exists
+
+   - name: Add line "exec awesome" to "~user/.xinitrc" file, if not present
+     lineinfile: dest={{ ansible_env.HOME }}/.xinitrc line="exec awesome"
+
+   - name: Install alsa-base and pulseaudio packages
+     become: True
+     apt: name={{item}} state=present
+     with_items:
+      - alsa-base
+      - pulseaudio
+
+   - name: Install some userland packages
+     become: True
+     apt: name={{item}} state=present
+     with_items:
+      - vlc
+      - nload
+      - firefox
+      - google-chrome-stable
+      - tmux
+      - ranger
+      - vim
+      - redshift
+      - workrave
+      - clipit
+      - dict
