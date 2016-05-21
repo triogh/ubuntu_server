@@ -11,14 +11,16 @@
    - name: Add "Google Chrome" repository
      become: True
      apt_repository: repo='deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' state=present
+     when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"
 
    - name: Equivalent of "apt-get update" 
      become: True
-     apt: update_cache=yes
+     apt: update_cache=yes cache_valid_time=3600
+
 
    - name: Install awesomeWM and xinit
      become: True
-     apt: name={{item}} state=present
+     apt: name={{ item }} state=present
      with_items:
       - awesome
       - libcairo-gobject2
@@ -26,25 +28,27 @@
 
    - name: Check if "~user/.xinitrc" file exists
      stat: path={{ ansible_env.HOME }}/.xinitrc
-     register: p
+     register: xinitrc
 
    - name: Create "~user/.xinitrc" file, if not exists
      file: path={{ ansible_env.HOME }}/.xinitrc state=touch
-     when: not p.stat.exists
+     when: not xinitrc.stat.exists
 
    - name: Add line "exec awesome" to "~user/.xinitrc" file, if not present
      lineinfile: dest={{ ansible_env.HOME }}/.xinitrc line="exec awesome"
 
+
    - name: Install alsa-base and pulseaudio packages
      become: True
-     apt: name={{item}} state=present
+     apt: name={{ item }} state=present
      with_items:
       - alsa-base
       - pulseaudio
 
+
    - name: Install some userland packages
      become: True
-     apt: name={{item}} state=present
+     apt: name={{ item }} state=latest
      with_items:
       - vlc
       - nload
@@ -60,3 +64,90 @@
       - nmap
       - lftp
       - perl-doc
+      - unattended-upgrades
+      - aptitude
+      - ufw
+      - fail2ban
+      - etckeeper
+
+   - name: Equivalent of "aptitude safe-upgrade"
+     become: True
+     apt: upgrade=safe
+
+
+
+   - name: Setup ufw
+     become: True
+     ufw: state=enabled policy=deny
+
+
+
+   - name: Check if "/etc/ssh/sshd_config" file exists
+     stat: path=/etc/ssh/sshd_config
+     register: sshd_config
+
+   - name: Disallow password authentication
+     become: True
+     lineinfile: dest=/etc/ssh/sshd_config
+                 regexp="^PasswordAuthentication"
+                 line="PasswordAuthentication no"
+                 state=present
+     notify: Restart ssh
+     when: sshd_config.stat.exists
+
+   - name: Disallow root SSH access
+     become: True
+     lineinfile: dest=/etc/ssh/sshd_config
+                 regexp="^PermitRootLogin"
+                 line="PermitRootLogin no"
+                 state=present
+     notify: Restart ssh
+     when: sshd_config.stat.exists
+
+
+
+   - name: Check if "~user/.vimrc" exists
+     stat: path={{ ansible_env.HOME }}/.vimrc
+     register: vimrc
+
+   - name: Check if "~user/.vim/templates/pl.template" exists
+     stat: path={{ ansible_env.HOME }}/.vim/templates/pl.template
+     register: pl_template
+
+   - name: Create temp directory for vim repo using mktemp
+     command: mktemp -d
+     register: tempdir_vim_repo
+     when: (not vimrc.stat.exists) or (not pl_template.stat.exists)
+
+   - name: Git checkout vim repo from github to temp directory
+     git: repo=https://github.com/triogh/vim dest={{ tempdir_vim_repo.stdout  }}
+     when: (not vimrc.stat.exists) or (not pl_template.stat.exists)
+
+   - name: Copy "vimrc" from temp repo directory to user home, if not exists
+     copy: remote_src=True src={{ tempdir_vim_repo.stdout }}/vimrc dest={{ ansible_env.HOME }}/.vimrc
+     when: not vimrc.stat.exists
+
+   - name: Copy "pl.template" from temp repo directory to user home, if not exists
+     copy: remote_src=True src={{ tempdir_vim_repo.stdout }}/pl.template dest={{ ansible_env.HOME }}/.vim/templates/pl.template
+     when: not pl_template.stat.exists
+
+   - name: Remove temp repo directory {{ tempdir_vim_repo.stdout }}, if exists
+     file: path={{ tempdir_vim_repo.stdout }} state=absent
+     when: (not vimrc.stat.exists) or (not pl_template.stat.exists)
+
+
+
+   - name: Add "~user/.ansible.cfg" with block, if not exists
+     blockinfile: 
+       create: yes 
+       dest: "{{ ansible_env.HOME }}/.ansible.cfg"
+       block: |
+         [defaults]
+         log_path = {{ ansible_env.HOME }}/ansible.log
+
+
+
+  handlers:
+   - name: Restart ssh
+     become: True
+     service: name=ssh state=restarted
