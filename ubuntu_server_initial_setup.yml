@@ -57,6 +57,11 @@
       - google-chrome-stable
       - tmux
       - ranger
+      - lynx
+      - elinks
+      - highlight
+      - atool
+      - mediainfo
       - vim
       - redshift
       - workrave
@@ -70,10 +75,14 @@
       - ufw
       - fail2ban
       - etckeeper
+      - ntp
+      - ntp-doc
+      - git
 
    - name: Equivalent of "aptitude safe-upgrade"
      become: True
      apt: upgrade=safe
+     tags: upgrade-pkgs
 
 
 
