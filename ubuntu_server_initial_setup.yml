@@ -156,6 +156,12 @@
          log_path = {{ ansible_env.HOME }}/ansible.log
 
 
+   - name: Just a debug example 
+     debug: msg="The $HOME of the user running the playbook is {{ ansible_env.HOME }}"
+     tags: 
+       - debug
+       - test
+
 
   handlers:
    - name: Restart ssh
