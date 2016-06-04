@@ -79,6 +79,10 @@
       - ntp
       - ntp-doc
       - git
+      - weechat
+      - alpine
+      - slrn
+      - newsbeuter
 
    - name: Equivalent of "aptitude safe-upgrade"
      become: True
