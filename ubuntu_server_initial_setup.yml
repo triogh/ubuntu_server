@@ -52,11 +52,22 @@
      apt: name={{ item }} state=latest
      with_items:
       - vlc
-      - nload
+      - mpv
+      - clementine
+      - comix
+      - calibre
+      - gpicview
+      - libreoffice
       - firefox
       - google-chrome-stable
       - chromium
+      - nload
       - tmux
+      - nmap
+      - lftp
+      - tree
+      - htop
+      - perl-doc
       - ranger
       - lynx
       - elinks
@@ -68,10 +79,6 @@
       - workrave
       - clipit
       - dict
-      - nmap
-      - lftp
-      - tree
-      - perl-doc
       - unattended-upgrades
       - aptitude
       - ufw
