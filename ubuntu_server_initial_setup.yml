@@ -58,9 +58,10 @@
       - calibre
       - gpicview
       - libreoffice
+      - impressive
       - firefox
       - google-chrome-stable
-      - chromium
+      - chromium-browser
       - nload
       - tmux
       - nmap
