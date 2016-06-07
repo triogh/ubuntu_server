@@ -93,6 +93,7 @@
       - slrn
       - newsbeuter
       - autofs
+      - wine
 
    - name: Equivalent of "aptitude safe-upgrade"
      become: True
