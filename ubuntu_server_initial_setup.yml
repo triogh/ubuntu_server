@@ -154,6 +154,10 @@
      copy: remote_src=True src={{ tempdir_vim_repo.stdout }}/vimrc dest={{ ansible_env.HOME }}/.vimrc
      when: not vimrc.stat.exists
 
+   - name: Create "~user/.vim/templates/" directory, if not exists
+     file: path={{ ansible_env.HOME }}/.vim/templates state=directory mode=0755
+     when: not pl_template.stat.exists
+
    - name: Copy "pl.template" from temp repo directory to user home, if not exists
      copy: remote_src=True src={{ tempdir_vim_repo.stdout }}/pl.template dest={{ ansible_env.HOME }}/.vim/templates/pl.template
      when: not pl_template.stat.exists
