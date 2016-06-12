@@ -94,6 +94,7 @@
       - newsbeuter
       - autofs
       - wine
+      - smartmontools
 
    - name: Equivalent of "aptitude safe-upgrade"
      become: True
