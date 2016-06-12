@@ -97,6 +97,8 @@
       - wine
       - smartmontools
 
+   - include: task_adds_virtualization.yml 
+
    - name: Equivalent of "aptitude safe-upgrade"
      become: True
      apt: upgrade=safe
