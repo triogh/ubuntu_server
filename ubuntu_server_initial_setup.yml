@@ -178,6 +178,13 @@
        - debug
        - test
 
+   - name: Another debug example
+     debug: var=ansible_version
+     tags:
+       - debug
+       - test
+
+
 
   handlers:
    - name: Restart ssh
