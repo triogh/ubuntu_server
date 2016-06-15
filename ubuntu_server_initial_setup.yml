@@ -87,6 +87,7 @@
       - ufw
       - fail2ban
       - etckeeper
+      - checkinstall
       - ntp
       - ntp-doc
       - git
