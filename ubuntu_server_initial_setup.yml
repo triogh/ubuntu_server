@@ -98,6 +98,8 @@
       - autofs
       - wine
       - smartmontools
+      - libcpanplus-perl
+      - cpanminus
 
    - include: task_adds_virtualization.yml 
 
