@@ -100,6 +100,9 @@
       - smartmontools
       - libcpanplus-perl
       - cpanminus
+      - pv
+      - bluez
+      - rfkill
 
    - include: task_adds_virtualization.yml 
 
