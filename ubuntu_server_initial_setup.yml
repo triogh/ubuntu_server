@@ -103,6 +103,8 @@
       - pv
       - bluez
       - rfkill
+      - lynx
+      - html2text
 
    - include: task_adds_virtualization.yml 
 
