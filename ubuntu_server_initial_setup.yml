@@ -105,6 +105,7 @@
       - rfkill
       - lynx
       - html2text
+      - evince
 
    - include: task_adds_virtualization.yml 
 
