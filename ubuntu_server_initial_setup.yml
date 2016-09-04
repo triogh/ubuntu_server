@@ -4,6 +4,24 @@
   connection: local
   gather_facts: yes
 
+# Run only once
+#  vars_prompt:
+#    - name: "network_interface"
+#      prompt: "What network interface you want to configure?"
+#      private: no
+#    - name: "network_interface_ip_address"
+#      prompt: "IP address of the network interface?"
+#      private: no
+#    - name: "network_gateway"
+#      prompt: "What is the IP address of the network gateway?"
+#      private: no
+#    - name: "nameserver_1"
+#      prompt: "IP address of the first nameserver?"
+#      private: no
+#    - name: "nameserver_2"
+#      prompt: "IP address of the second nameserver?"
+#      private: no
+
   tasks:
    - name: Add apt signing key for Google
      become: True
@@ -202,9 +220,31 @@
        - debug
        - test
 
+# Run only once
+#   - name: network_interface
+#     debug: var=network_interface
+#   - name: network_interface_ip_address
+#     debug: var=network_interface_ip_address
+#   - name: network_gateway
+#     debug: var=network_gateway
+#   - name: nameserver_1
+#     debug: var=nameserver_1
+#   - name: nameserver_2
+#     debug: var=nameserver_2
+#
+#   - name: Write "/etc/network/interfaces" with static IP and nameservers 
+#     become: True
+#     template: src=etc_network_interfaces.j2 dest=/etc/network/interfaces
+#     notify:
+#       - restart networking
+
 
 
   handlers:
    - name: Restart ssh
      become: True
      service: name=ssh state=restarted
+
+   - name: restart networking
+     become: True
+     service: name=networking state=restarted
