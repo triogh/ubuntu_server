@@ -124,6 +124,7 @@
       - lynx
       - html2text
       - evince
+      - xbacklight
 
    - include: task_adds_virtualization.yml 
 
