@@ -1,0 +1,7 @@
+---
+- name: Install NFS client pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - rpcbind
+    - nfs-common
