@@ -1,7 +1,8 @@
 ---
-- name: Install NFS client pkgs
+- name: Install NFS client related pkgs
   become: true
   apt: name={{ item }} state=present
   with_items:
     - rpcbind
     - nfs-common
+    - autofs
