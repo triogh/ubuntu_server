@@ -1,0 +1,9 @@
+---
+# Digital Ocean documentation
+# https://www.digitalocean.com/community/tutorials/how-to-install-python-3-and-set-up-a-local-programming-environment-on-ubuntu-16-04
+- name: Install python3 related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - python3-pip
+    - python3-venv
