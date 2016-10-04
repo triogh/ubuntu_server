@@ -5,7 +5,7 @@
   become: true
   apt: name={{ item }} state=present
   with_items:
-    - python3-pip
+    - python3-pip # https://pypi.python.org/pypi
     - python3-venv
     - idle3
     - ipython3

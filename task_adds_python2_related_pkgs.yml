@@ -3,5 +3,5 @@
   become: true
   apt: name={{ item }} state=present
   with_items:
-    - python-pip
+    - python-pip # https://pypi.python.org/pypi 
     - ipython
