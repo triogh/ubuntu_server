@@ -9,3 +9,5 @@
     - python3-venv
     - idle3
     - ipython3
+    - libssl-dev 
+    - libffi-dev
