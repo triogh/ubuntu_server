@@ -128,6 +128,9 @@
       - xbacklight
       - dstat
       - rar
+      - pdfshuffler
+      - poppler-utils
+      - xournal
 
    - include: task_adds_virtualization.yml 
    - include: task_adds_nfs_client_related_pkgs.yml
