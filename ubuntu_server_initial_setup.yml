@@ -131,6 +131,7 @@
       - pdfshuffler
       - poppler-utils
       - xournal
+      - cryptsetup
 
    - include: task_adds_virtualization.yml 
    - include: task_adds_nfs_client_related_pkgs.yml
