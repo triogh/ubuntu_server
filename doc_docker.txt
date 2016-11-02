@@ -1,0 +1,189 @@
+###################################################
+## Wed Nov  2 09:53:53 CET 2016
+## https://www.digitalocean.com/community/tutorials/how-to-use-the-digitalocean-docker-application
+## PostedSeptember 20, 2013
+###################################################
+
+
+$ docker run ubuntu echo "Hello World"
+-docker will search for the 'ubuntu' image on your local machine, if it doesn't find it it will pull the image from the 'Docker Central Registry'
+-docker will run a container from an image named "ubuntu" (which contains the whole "ubuntu" root file system ~180MB)
+-docker will execute 'echo "Hello World"' in the shell (in the container) and exit
+
+
+$ docker images
+-list docker images which have been downloaded/cached on your local machine
+
+
+$ docker ps -a
+-lists all containers, even those which have exited (are not running any more)
+-those which have exited are visible because the writable file system layer used by the temporary container (for example the one mentioned above, which echo-ed "Hello World" and exited) is still around
+
+
+$ docker rm
+-remove a container
+
+
+$ docker rmi
+-remove an image
+
+
+$ docker version
+-shows currently installed docker client/server version
+## END
+
+###################################################
+## Wed Nov  2 10:39:28 CET 2016
+## https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-getting-started
+## PostedDecember 11, 2013
+###################################################
+
+Docker is here to offer you an efficient, speedy way to port applications across systems and machines. It is light and lean, allowing you to quickly contain applications and run them within their own secure environments (via Linux Containers: LXC). 
+
+Whether it be from your development machine to a remote server for production, or packaging everything for use elsewhere, it is always a challenge when it comes to porting your application stack together with its dependencies and getting it to run without hiccups. In fact, the challenge is immense and solutions so far have not really proved successful for the masses.
+
+In a nutshell, docker as a project offers you the complete set of higher-level tools to carry everything that forms an application across systems and machines - virtual or physical - and brings along loads more of great benefits with it.
+
+Docker achieves its robust application (and therefore, process and resource) containment via Linux Containers (e.g. namespaces and other kernel features). Its further capabilities come from a project's own parts and components, which extract all the complexity of working with lower-level linux tools/APIs used for system and application management with regards to securely containing processes.
+
+Main Docker Parts:
+
+docker daemon: used to manage docker (LXC) containers on the host it runs
+docker CLI: used to command and communicate with the docker daemon
+docker image index: a repository (public or private) for docker images
+
+Main Docker Elements:
+
+docker containers: directories containing everything-your-application
+docker images: snapshots of containers or base OS (e.g. Ubuntu) images
+Dockerfiles: scripts automating the building process of images
+
+
+Docker Containers:
+
+The entire procedure of porting applications using docker relies solely on the shipment of containers.
+
+Docker containers are basically directories which can be packed (e.g. tar-archived) like any other, then shared and run across various different machines and platforms (hosts). The only dependency is having the hosts tuned to run the containers (i.e. have docker installed). Containment here is obtained via Linux Containers (LXC).
+
+Linux Containers can be defined as a combination various kernel-level features (i.e. things that Linux-kernel can do) which allow management of applications (and resources they use) contained within their own environment. By making use of certain features (e.g. namespaces, chroots, cgroups and SELinux profiles), the LXC contains application processes and helps with their management through limiting resources, not allowing reach beyond their own file-system (access to the parent's namespace) etc.
+
+Docker with its containers makes use of LXC, however, also brings along much more.
+
+Being based and depending on LXC, from a technical aspect, these containers are like a directory (but a shaped and formatted one). This allows portability and gradual builds of containers.
+
+Each container is layered like an onion and each action taken within a container consists of putting another block (which actually translates to a simple change within the file system) on top of the previous one. And various tools and configurations make this set-up work in a harmonious way altogether (e.g. union file-system/aufs).
+
+What this way of having containers allows is the extreme benefit of easily launching and creating new containers and images, which are thus kept lightweight (thanks to gradual and layered way they are built). Since everything is based on the file-system, taking snapshots and performing roll-backs in time are cheap (i.e. very easily done / not heavy on resources), much like version control systems (VCS).
+
+Each docker container starts from a docker image which forms the base for other applications and layers to come.
+
+Docker Images:
+
+Docker images constitute the base of docker containers from which everything starts to form. They are very similar to default operating-system disk images which are used to run applications on servers or desktop computers.
+
+Having these images (e.g. Ubuntu base) allow seamless portability across systems. They make a solid, consistent and dependable base with everything that is needed to run the applications. When everything is self-contained and the risk of system-level updates or modifications are eliminated, the container becomes immune to external exposures which could put it out of order - preventing the dependency hell.
+
+As more layers (tools, applications etc.) are added on top of the base, new images can be formed by committing these changes. When a new container gets created from a saved (i.e. committed) image, things continue from where they left off. And the union file system, brings all the layers together as a single entity when you work with a container.
+
+These base images can be explicitly stated when working with the docker CLI to directly create a new container or they might be specified inside a Dockerfile for automated image building. 
+
+
+Dockerfiles:
+
+Dockerfiles are scripts containing a successive series of instructions, directions, and commands which are to be executed to form a new docker image. Each command executed translates to a new layer of the onion, forming the end product. They basically replace the process of doing everything manually and repeatedly. When a Dockerfile is finished executing, you end up having formed an image, which then you use to start (i.e. create) a new container.
+
+
+$ docker
+-lists all available docker commands
+
+$ docker info
+-shows system-wide information on docker
+-for example total number of created containers, which of them are Running/Paused/Stopped
+-number of locally available images
+-storage driver, i.e. aufs
+-root directory, i.e. /var/lib/docker/aufs
+-Network, i.e. host null overlay bridge
+-Docker Root Dir, i.e. /var/lib/docker
+
+
+Working with Images:
+
+As we have discussed at length, the key to start working with any docker container is using images. There are many freely available images shared across docker image index and the CLI allows simple access to query the image repository and to download new ones.
+
+When you are ready, you can also share your image there as well. See the section on “push” further down for details.
+
+
+$ docker search ubuntu
+-searching for a docker image, in the above example, the image we are searching for is named ubuntu
+-this search will provide you a list of all available images matching the query 'ubuntu'
+
+
+$ docker pull ubuntu
+-either when you are building / creating a container or before you do, you will need to have an image present at the host machine where the containers will exist. In order to download images (perhaps following “search”) you can execute pull to get one
+
+
+$ docker images
+-all the images on your system, including the ones you have created by committing (see below for details), can be listed using “images”
+
+
+$ docker commit 8dbd9e392a96 my_img
+-as you work with a container and continue to perform actions on it (e.g. download and install software, configure files etc.), to have it keep its state, you need to “commit” 
+-committing makes sure that everything continues from where they left next time you use one (i.e. an image)
+
+
+$ docker push my_username/my_first_image
+-although it is a bit early at this moment - in our article, when you have created your own container which you would like to share with the rest of the world, you can use push to have your image listed in the index where everybody can download and use
+-please remember to “commit” all your changes
+-note: You need to sign-up at index.docker.io to push images to docker index
+
+
+Working with Containers:
+
+When you "run" any process using an image, in return, you will have a container. When the process is not actively running, this container will be a non-running container. Nonetheless, all of them will reside on your system until you remove them via rm command.
+
+$ docker ps
+-list all running containers
+
+$ docker ps -a
+-list of both running and non-running ones
+
+$ docker ps -l
+-list the last run container
+-shows only the latest created container, include non-running ones
+
+
+Creating a New Container:
+
+It is currently not possible to create a container without running anything (i.e. commands). To create a new container, you need to use a base image and specify a command to run.
+
+$ docker run my_img echo "hello"
+-usage: docker run [image name] [command to run]
+
+$ docker run -name my_cont_1 my_img echo "hello"
+-to name a container instead of having long IDs
+-usage: sudo docker run -name [name] [image name] [command to run]
+
+Running a container:
+
+$ docker run c629b7d70666
+-usage: docker run [container ID]
+-when you create a container and it stops (either due to its process ending or you stopping it explicitly), you can use “run” to get the container working again with the same command used to create it.
+
+Stopping a container:
+
+$ docker stop c629b7d70666
+-usage: docker stop [container ID]
+-to stop a container's process from running
+
+Saving (committing) a container:
+
+If you would like to save the progress and changes you made with a container, you can use “commit” as explained above to save it as an image.
+
+    This command turns your container to an image.
+
+Remember that with docker, commits are cheap. Do not hesitate to use them to create images to save your progress with a container or to roll back when you need (e.g. like snapshots in time).
+
+Removing / Deleting a container:
+$ docker rm c629b7d70666
+-usage: docker rm [container ID]
+-using the ID of a container, you can delete one with rm
