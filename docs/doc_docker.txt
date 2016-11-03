@@ -12,18 +12,21 @@ Created: PostedSeptember 20, 2013
 $ docker run ubuntu echo "Hello World"
 +++
 -docker will search for the 'ubuntu' image on your local machine, if it doesn't find it it will pull the image from the 'Docker Central Registry'
+
 -docker will run a container from an image named "ubuntu" (which contains the whole "ubuntu" root file system ~180MB)
+
 -docker will execute 'echo "Hello World"' in the shell (in the container) and exit
 
 
 $ docker images
 +++
--list docker images which have been downloaded/cached on your local machine
+-list docker images which have been downloaded/cached or created on your local machine
 
 
 $ docker ps -a
 +++
 -lists all containers, even those which have exited (are not running any more)
+
 -those which have exited are visible because the writable file system layer used by the temporary container (for example the one mentioned above, which echo-ed "Hello World" and exited) is still around
 
 
@@ -62,16 +65,16 @@ Docker achieves its robust application (and therefore, process and resource) con
 Main Docker Parts:
 +++
 
-docker daemon: used to manage docker (LXC) containers on the host it runs
-docker CLI: used to command and communicate with the docker daemon
-docker image index: a repository (public or private) for docker images
+- docker daemon: used to manage docker (LXC) containers on the host it runs
+- docker CLI: used to command and communicate with the docker daemon
+- docker image index: a repository (public or private) for docker images
 
 Main Docker Elements:
 +++
 
-docker containers: directories containing everything-your-application
-docker images: snapshots of containers or base OS (e.g. Ubuntu) images
-Dockerfiles: scripts automating the building process of images
+- docker containers: directories containing everything-your-application
+- docker images: snapshots of containers or base OS (e.g. Ubuntu) images
+- Dockerfiles: scripts automating the building process of images
 
 
 Docker Containers:
@@ -93,6 +96,7 @@ What this way of having containers allows is the extreme benefit of easily launc
 
 Each docker container starts from a docker image which forms the base for other applications and layers to come.
 
+
 Docker Images:
 +++
 
@@ -102,10 +106,10 @@ Having these images (e.g. Ubuntu base) allow seamless portability across systems
 
 As more layers (tools, applications etc.) are added on top of the base, new images can be formed by committing these changes. When a new container gets created from a saved (i.e. committed) image, things continue from where they left off. And the union file system, brings all the layers together as a single entity when you work with a container.
 
-These base images can be explicitly stated when working with the docker CLI to directly create a new container or they might be specified inside a Dockerfile for automated image building. 
+These base images can be explicitly stated when working with the docker CLI to directly create a new container or they might be specified inside a Dockerfile for automated image building.
 
 
-Dockerfiles:
+Dockerfiles
 +++
 
 Dockerfiles are scripts containing a successive series of instructions, directions, and commands which are to be executed to form a new docker image. Each command executed translates to a new layer of the onion, forming the end product. They basically replace the process of doing everything manually and repeatedly. When a Dockerfile is finished executing, you end up having formed an image, which then you use to start (i.e. create) a new container.
@@ -117,13 +121,14 @@ $ docker
 
 $ docker info
 ---
--shows system-wide information on docker
--for example total number of created containers, which of them are Running/Paused/Stopped
--number of locally available images
--storage driver, i.e. aufs
--root directory, i.e. /var/lib/docker/aufs
--Network, i.e. host null overlay bridge
--Docker Root Dir, i.e. /var/lib/docker
+-shows system-wide information on docker, among other info
+
+- total number of created containers, which of them are Running/Paused/Stopped
+- number of locally available images
+- storage driver, i.e. aufs
+- root directory, i.e. /var/lib/docker/aufs
+- Network, i.e. host null overlay bridge
+- Docker Root Dir, i.e. /var/lib/docker
 
 
 Working with Images:
@@ -131,35 +136,39 @@ Working with Images:
 
 As we have discussed at length, the key to start working with any docker container is using images. There are many freely available images shared across docker image index and the CLI allows simple access to query the image repository and to download new ones.
 
-When you are ready, you can also share your image there as well. See the section on “push” further down for details.
+When you are ready, you can also share your image there as well. See the section on "push" further down for details.
 
 
 $ docker search ubuntu
 ---
 -searching for a docker image, in the above example, the image we are searching for is named ubuntu
+
 -this search will provide you a list of all available images matching the query 'ubuntu'
 
 
 $ docker pull ubuntu
 ---
--either when you are building / creating a container or before you do, you will need to have an image present at the host machine where the containers will exist. In order to download images (perhaps following “search”) you can execute pull to get one
+-either when you are building / creating a container or before you do, you will need to have an image present at the host machine where the containers will exist. In order to download images (perhaps following "search") you can execute pull to get one
 
 
 $ docker images
 ---
--all the images on your system, including the ones you have created by committing (see below for details), can be listed using “images”
+-all the images on your system, including the ones you have created by committing (see below for details), can be listed using "images"
 
 
 $ docker commit 8dbd9e392a96 my_img
 ---
--as you work with a container and continue to perform actions on it (e.g. download and install software, configure files etc.), to have it keep its state, you need to “commit” 
+-as you work with a container and continue to perform actions on it (e.g. download and install software, configure files etc.), to have it keep its state, you need to "commit" 
+
 -committing makes sure that everything continues from where they left next time you use one (i.e. an image)
 
 
 $ docker push my_username/my_first_image
 ---
 -although it is a bit early at this moment - in our article, when you have created your own container which you would like to share with the rest of the world, you can use push to have your image listed in the index where everybody can download and use
--please remember to “commit” all your changes
+
+-please remember to "commit" all your changes
+
 -note: You need to sign-up at index.docker.io to push images to docker index
 
 
@@ -191,9 +200,10 @@ $ docker run my_img echo "hello"
 ---
 -usage: docker run [image name] [command to run]
 
-$ docker run -name my_cont_1 my_img echo "hello"
+$ docker run --name my_cont_1 my_img echo "hello"
 ---
 -to name a container instead of having long IDs
+
 -usage: sudo docker run -name [name] [image name] [command to run]
 
 Running a container:
@@ -215,15 +225,17 @@ $ docker stop c629b7d70666
 Saving (committing) a container:
 +++
 
-If you would like to save the progress and changes you made with a container, you can use “commit” as explained above to save it as an image.
+If you would like to save the progress and changes you made with a container, you can use "commit" as explained above to save it as an image.
 
     This command turns your container to an image.
 
 Remember that with docker, commits are cheap. Do not hesitate to use them to create images to save your progress with a container or to roll back when you need (e.g. like snapshots in time).
 
-Removing / Deleting a container:
+Removing / Deleting a container
 +++
+
 $ docker rm c629b7d70666
 ---
 -usage: docker rm [container ID]
+
 -using the ID of a container, you can delete one with rm

@@ -20,8 +20,8 @@ unless ( $input_txt_file =~ /\.txt$/ ) {die qq|Error: input file must have a "*.
 my $generated_html_file;
 ($generated_html_file = $input_txt_file) =~ s/txt$/html/; 
 
-my $txt2html_cmd = qq{txt2html -mosaic -infile $input_txt_file -outfile $generated_html_file};
-system($txt2html_cmd);
+my $txt2html_cmd = qq{txt2html --mosaic --bullets '-' --titlefirst --infile $input_txt_file --outfile $generated_html_file};
+system($txt2html_cmd); 
 
 
 my $toc        = HTML::Toc->new();
