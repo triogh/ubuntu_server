@@ -5,6 +5,10 @@
 use strict;
 use warnings;
 
+use HTML::Toc;
+use HTML::TocUpdator;
+
+
 unless (scalar @ARGV == 1) {die qq|Error: at least one argument must be supplied to the script!\n|};
 
 my $input_file = shift @ARGV;
@@ -17,3 +21,9 @@ my $output_file;
 
 my $txt2html_cmd = qq{txt2html -mosaic -infile $input_file -outfile $output_file};
 system($txt2html_cmd);
+
+
+my $toc        = HTML::Toc->new();
+my $tocUpdator = HTML::TocUpdator->new();
+
+$tocUpdator->insertIntoFile($toc, $output_file, {outputFile => "test_file.html"});
