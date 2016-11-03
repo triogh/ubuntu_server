@@ -72,6 +72,56 @@
                </li>
             </ul>
          </li>
+         <li><a href="#h-1.3">Title: docker-explained-using-dockerfiles-to-automate-building-of-images</a>
+            <ul>
+               <li><a href="#h-1.3.1">Introduction</a></li>
+               <li><a href="#h-1.3.2">Docker in Brief</a></li>
+               <li><a href="#h-1.3.3">Dockerfiles</a></li>
+               <li><a href="#h-1.3.4">Dockerfile Syntax Example</a></li>
+               <li><a href="#h-1.3.5">Dockerfile Commands/Instructions</a>
+                  <ul>
+                     <li><a href="#h-1.3.5.1">add</a></li>
+                     <li><a href="#h-1.3.5.2">cmd</a></li>
+                     <li><a href="#h-1.3.5.3">entrypoint</a></li>
+                     <li><a href="#h-1.3.5.4">env</a></li>
+                     <li><a href="#h-1.3.5.5">expose</a></li>
+                     <li><a href="#h-1.3.5.6">from</a></li>
+                     <li><a href="#h-1.3.5.7">maintainer</a></li>
+                     <li><a href="#h-1.3.5.8">run</a></li>
+                     <li><a href="#h-1.3.5.9">user</a></li>
+                     <li><a href="#h-1.3.5.10">volume</a></li>
+                     <li><a href="#h-1.3.5.11">workdir</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.3.6">How to Use Dockerfiles</a>
+                  <ul>
+                     <li><a href="#h-1.3.6.1">$ docker build -t my_mongodb .    </a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.3.7">Dockerfile Example: Creating an Image to Install MongoDB</a>
+                  <ul>
+                     <li><a href="#h-1.3.7.1">Creating the Empty Dockerfile</a></li>
+                     <li><a href="#h-1.3.7.2">Defining Our File and Its Purpose</a></li>
+                     <li><a href="#h-1.3.7.3">Setting The Base Image to Use</a></li>
+                     <li><a href="#h-1.3.7.4">Defining The Maintainer (Author)</a></li>
+                     <li><a href="#h-1.3.7.5">Updating The Application Repository List</a></li>
+                     <li><a href="#h-1.3.7.6">Setting Arguments and Commands for Downloading MongoDB</a></li>
+                     <li><a href="#h-1.3.7.7">Setting The Default Port For MongoDB</a></li>
+                     <li><a href="#h-1.3.7.8">The resulting Dockerfile </a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.3.8">Building Our First Image</a>
+                  <ul>
+                     <li><a href="#h-1.3.8.1">$ docker build -t my_mongodb .</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.3.9">Running A MongoDB Instance</a>
+                  <ul>
+                     <li><a href="#h-1.3.9.1">$ docker run --name my_first_mdb_instance -i -t my_mongodb</a></li>
+                  </ul>
+               </li>
+            </ul>
+         </li>
       </ul>
    </li>
 </ul>
@@ -263,7 +313,384 @@ Created: PostedDecember 11, 2013
 <h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.12.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_12_1">$ docker rm c629b7d70666</a></h4>
 <p>-usage: docker rm [container ID]
 </p>
-<p>-using the ID of a container, you can delete one with rm</p>
+<p>-using the ID of a container, you can delete one with rm
+</p>
+<h2><!-- #BeginTocAnchorNameBegin --><a name="h-1.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3">Title: docker-explained-using-dockerfiles-to-automate-building-of-images</a></h2>
+<p>Source: <a href="https://www.digitalocean.com/community/tutorials/docker-explained-using-dockerfiles-to-automate-building-of-images">https://www.digitalocean.com/community/tutorials/docker-explained-using-dockerfiles-to-automate-building-of-images</a>
+</p>
+<p>Added: Thu Nov  3 13:39:08 CET 2016<br/>
+Created: PostedDecember 13, 2013
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_1">Introduction</a></h3>
+
+<p>Docker containers are created by using [base] images. An image can be basic, with nothing but the operating-system fundamentals, or it can consist of a sophisticated pre-built application stack ready for launch.
+</p>
+<p>When building your images with docker, each action taken (i.e. a command executed such as apt-get install) forms a new layer on top of the previous one. These base images then can be used to create new containers.
+</p>
+<p>In this DigitalOcean article, we will see about automating this process as much as possible, as well as demonstrate the best practices and methods to make most of docker and containers via Dockerfiles: scripts to build containers, step-by-step, layer-by-layer, automatically from a source (base) image.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_2">Docker in Brief</a></h3>
+
+<p>The docker project offers higher-level tools which work together, built on top of some Linux kernel features. The goal is to help developers and system administrators port applications. - with all of their dependencies conjointly - and get them running across systems and machines headache free.
+</p>
+<p>Docker achieves this by creating safe, LXC (i.e. Linux Containers) based environments for applications called &acirc;Äúdocker containers&acirc;Äù. These containers are created using docker images, which can be built either by executing commands manually or automatically through Dockerfiles.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_3">Dockerfiles</a></h3>
+
+<p>Each Dockerfile is a script, composed of various commands (instructions) and arguments listed successively to automatically perform actions on a base image in order to create (or form) a new one. They are used for organizing things and greatly help with deployments by simplifying the process start-to-finish.
+</p>
+<p>Dockerfiles begin with defining an image FROM which the build process starts. Followed by various other methods, commands and arguments (or conditions), in return, provide a new image which is to be used for creating docker containers.
+</p>
+<p>They can be used by providing a Dockerfile's content - in various ways - to the docker daemon to build an image.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_4">Dockerfile Syntax Example</a></h3>
+
+<p>Dockerfile syntax consists of two kind of main line blocks: comments and commands + arguments.
+</p>
+<p># Line blocks used for commenting<br/>
+command argument argument ..
+</p>
+<p>    A Simple Example
+</p>
+<p>    # Print "Hello docker!"<br/>
+    RUN echo "Hello docker!"
+</p>
+<p>Dockerfiles use simple, clean, and clear syntax which makes them strikingly easy to create and use. They are designed to be self explanatory, especially because they allow commenting just like a good and properly written application source-code. 
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5">Dockerfile Commands/Instructions</a></h3>
+
+<p>Currently there are about a dozen different set of commands which Dockerfiles can contain to have docker build an image. In this section, we will go over all of them, individually, before working on a Dockerfile example.
+</p>
+<p>Note. As explained in the previous section (Dockerfile Syntax), all these commands are to be listed (i.e. written) successively, inside a single plain text file (i.e. Dockerfile), in the order you would like them performed (i.e. executed) by the docker daemon to build an image. However, some of these commands (e.g. MAINTAINER) can be placed anywhere you seem fit (but always after FROM command), as they do not constitute of any execution but rather value of a definition (i.e. just some additional information).
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_1">add</a></h4>
+
+<p>The ADD command gets two arguments: a source and a destination. It basically copies the files from the source on the host into the container's own filesystem at the set destination. If, however, the source is a URL (e.g. <a href="http://github.com/user/file/">http://github.com/user/file/</a>), then the contents of the URL are downloaded and placed at the destination.
+</p>
+<p>Example
+</p>
+<p># Usage, ADD [source directory or URL] [destination directory]
+ADD /my_app_folder /my_app_folder
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_2">cmd</a></h4>
+
+<p>The command CMD, similarly to RUN, can be used for executing a specific command. However, unlike RUN it is not executed during build, <strong>but when a container is instantiated</strong> using the image being built. Therefore, it should be considered as an initial, default command that gets executed (i.e. run) with the creation of containers based on the image.
+</p>
+<p>To clarify. an example for CMD would be running an application upon creation of a container which is already installed using RUN (e.g. RUN apt-get install &acirc;Ä&brvbar;) inside the image. This default application execution command that is set with CMD becomes the default and replaces any command which is passed during the creation.
+</p>
+<p>Example
+</p>
+<p># Usage,  CMD application "argument", "argument", ..
+CMD "echo" "Hello docker!"
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_3">entrypoint</a></h4>
+
+<p>ENTRYPOINT argument sets the concrete default application that is used every time a container is instantiated/created using the image. For example, if you have installed a specific application inside an image and you will use this image to only run that application, you can state it with ENTRYPOINT and whenever a container is created from that image, your application will be the target.
+</p>
+<p>If you couple ENTRYPOINT with CMD, you can remove "application" from CMD and just leave "arguments" which will be passed to the ENTRYPOINT.
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p># Usage: ENTRYPOINT application "argument", "argument", ..
+# Remember: arguments are optional. They can be provided by CMD
+#           or during the creation of a container. 
+ENTRYPOINT echo
+</p>
+<p># Usage example with CMD:<br/>
+# Arguments set with CMD can be overridden during <em>run</em>
+CMD "Hello docker!"<br/>
+ENTRYPOINT echo  
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_4">env</a></h4>
+
+<p>The ENV command is used to set the environment variables (one or more). These variables consist of &acirc;Äúkey value&acirc;Äù pairs which can be accessed within the container by scripts and applications alike. This functionality of docker offers an enormous amount of flexibility for running programs.
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p>#Usage: ENV key value<br/>
+ENV SERVER_WORKS 4
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_5">expose</a></h4>
+
+<p>The EXPOSE command is used to associate a specified port to enable networking between the running process inside the container and the outside world (i.e. the host).
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p>#Usage: EXPOSE [port]<br/>
+EXPOSE 8080
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_6">from</a></h4>
+
+<p>FROM directive is probably the most crucial amongst all others for Dockerfiles. It defines the base image to use to start the build process. It can be any image, including the ones you have created previously. If a FROM image is not found on the host, docker will try to find it (and download) from the docker image index. It needs to be the first command declared inside a Dockerfile.
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p># Usage: FROM [image name]<br/>
+FROM ubuntu
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_7">maintainer</a></h4>
+
+<p>One of the commands that can be set anywhere in the file - although it would be better if it was declared on top - is MAINTAINER. This non-executing command declares the author, hence setting the author field of the images. It should come nonetheless after FROM.
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p># Usage: MAINTAINER [name]<br/>
+MAINTAINER authors_name
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.8"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_8">run</a></h4>
+
+<p>The RUN command is the central executing directive for Dockerfiles. It takes a command as its argument and runs it to form/create the image. Unlike CMD, <strong>it actually is used to build the image</strong> (forming another layer on top of the previous one which is committed).
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p># Usage: RUN [command]<br/>
+RUN aptitude install -y riak
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.9"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_9">user</a></h4>
+
+<p>The USER directive is used to set the UID (or username) which is to run the container based on the image being built.
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p># Usage: USER [UID]<br/>
+USER 751
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.10"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_10">volume</a></h4>
+
+<p>The VOLUME command is used to enable access from your container to a directory on the host machine (i.e. mounting it).
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p># Usage: VOLUME ["/dir_1", "/dir_2" ..]
+VOLUME ["/my_files"]
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5.11"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5_11">workdir</a></h4>
+
+<p>The WORKDIR directive is used to set where the command defined with CMD is to be executed.
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<p># Usage: WORKDIR /path<br/>
+WORKDIR ~/
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_6">How to Use Dockerfiles</a></h3>
+
+<p>Using the Dockerfiles is as simple as having the docker daemon run one. The output after executing the script will be the ID of the new docker image.
+</p>
+<dl>
+  <dt>Usage</dt>
+<dd>
+</dd></dl>
+<p># Build an image using the Dockerfile at current location
+</p>
+<p># Example: docker build -t [name] .
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.6.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_6_1">$ docker build -t my_mongodb .    </a></h4>
+
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7">Dockerfile Example: Creating an Image to Install MongoDB</a></h3>
+
+<p>In this final section for Dockerfiles, we will create a Dockerfile document and populate it step-by-step with the end result of having a Dockerfile, which can be used to create a docker image to run MongoDB containers.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7_1">Creating the Empty Dockerfile</a></h4>
+
+<p>Using the nano text editor, let's start editing our Dockerfile.
+</p>
+<p>nano Dockerfile
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7_2">Defining Our File and Its Purpose</a></h4>
+
+<p>Albeit optional, it is always a good practice to let yourself and everybody figure out (when necessary) what this file is and what it is intended to do. For this, we will begin our Dockerfile with fancy comments (i#) to describe it - and have it like cool kids.
+</p>
+<p>############################################################
+</p>
+<p># Dockerfile to build MongoDB container images
+</p>
+<p># Based on Ubuntu<br/>
+############################################################
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7_3">Setting The Base Image to Use</a></h4>
+
+<p># Set the base image to Ubuntu<br/>
+FROM ubuntu
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7_4">Defining The Maintainer (Author)</a></h4>
+
+<p># File Author / Maintainer<br/>
+MAINTAINER Example McAuthor
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7_5">Updating The Application Repository List</a></h4>
+
+<p>Note: This step is not necessary, given that we are not using the repository right afterwards. However, it can be considered good practice.
+</p>
+<p># Update the repository sources list<br/>
+RUN apt-get update
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7_6">Setting Arguments and Commands for Downloading MongoDB</a></h4>
+
+<p>################## BEGIN INSTALLATION ######################
+</p>
+<p># Install MongoDB Following the Instructions at MongoDB Docs
+# Ref: <a href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a>
+</p>
+<p># Add the package verification key<br/>
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+</p>
+<p># Add MongoDB to the repository sources list
+</p>
+<p>RUN echo 'deb <a href="http://downloads-distro.mongodb.org/repo/ubuntu-upstart">http://downloads-distro.mongodb.org/repo/ubuntu-upstart</a> dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list
+</p>
+<p># Update the repository sources list once more
+</p>
+<p>RUN apt-get update
+</p>
+<p># Install MongoDB package (.deb)<br/>
+RUN apt-get install -y mongodb-10gen
+</p>
+<p># Create the default data directory<br/>
+RUN mkdir -p /data/db
+</p>
+<p>##################### INSTALLATION END #####################
+</p>
+<p>MY NOTE: in the comments section it was said it's better practice to avoid using separate RUN directives where possible as each RUN command adds an additional layer to the image, creating unnecessary bloat. Later below in this text I have added a modified Dockerfile which follows this advice.
+</p>
+<p>QUOTE from comments:<br/>
+February 17, 2015
+</p>
+<p>One thing to note, each time you use the RUN command, it makes a layer in your image which may bloat your total image tree (if you run docker images --tree in the terminal to view the tree structure).
+MY NOTE (there is no --tree option to docker images, so presumably the below command does the same job): 
+$ docker images --all
+</p>
+<p>If you don't want all those layers, use a single RUN command. A great example of this is actually the Dockerfile for the ubuntu image.
+<a href="https://github.com/tianon/docker-brew-ubuntu-core/blob/a9da4b3cd8977c2aacafe5d9d0056cbb360f2d1c/vivid/Dockerfile">https://github.com/tianon/docker-brew-ubuntu-core/blob/a9da4b3cd8977c2aacafe5d9d0056cbb360f2d1c/vivid/Dockerfile</a>
+</p>
+<p>June 29, 2016
+</p>
+<p>This should be mentioned in the section on the RUN command, since inadvertently adding layers is not best practice or a good habit for a beginner to build. Nice info.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7_7">Setting The Default Port For MongoDB</a></h4>
+
+<p># Expose the default port<br/>
+EXPOSE 27017
+</p>
+<p># Default port to execute the entrypoint (MongoDB)
+CMD ["--port 27017"]
+</p>
+<p># Set default container command<br/>
+ENTRYPOINT usr/bin/mongod
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7.8"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7_8">The resulting Dockerfile </a></h4>
+
+<p>Has some of my additional modifications related to RUN directives, and also some updates necessary for the Dockerfile to work in the present time (2016), since the tutorial was created in 2013. 
+</p>
+<p>###################################################
+</p>
+<p># Dockerfile to build MongoDB container images
+</p>
+<p># Based on Ubuntu<br/>
+###################################################
+</p>
+<p># Set the base image to Ubuntu<br/>
+FROM ubuntu
+</p>
+<p># File Author / Maintainer<br/>
+MAINTAINER Example McAuthor
+</p>
+<p># Update the repository sources list<br/>
+RUN apt-get update
+</p>
+<p>##################### BEGIN INSTALLATION ####################
+</p>
+<p># Install MongoDB Following the Instructions at MongoDB Docs
+# Ref: <a href="http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/">http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/</a>
+</p>
+<p># Add the package verification key<br/>
+RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
+</p>
+<p># Add MongoDB to the repository sources list
+RUN echo "deb <a href="http://repo.mongodb.org/apt/ubuntu">http://repo.mongodb.org/apt/ubuntu</a> xenial/mongodb-org/3.2 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list
+</p>
+<p># Update the repository sources list once more
+RUN apt-get update
+</p>
+<p># Install MongoDB package (.deb)<br/>
+RUN apt-get install -y mongodb-org
+</p>
+<p># Create the default data directory<br/>
+RUN mkdir -p /data/db
+</p>
+<p># ubuntu 16.04 specific<br/>
+# <a href="https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/">https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/</a>
+</p>
+<p>RUN echo "[Unit]" | tee -a /lib/systemd/system/mongod.service \
+</p><p>    &amp;&amp; echo "Description=High-performance, schema-free document-oriented database" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "After=network.target" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "Documentation=<a href="https://docs.mongodb.org/manual">https://docs.mongodb.org/manual</a>" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "[Service]" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "User=mongodb" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "Group=mongodb" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "ExecStart=/usr/bin/mongod --quiet --config /etc/mongod.conf" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "[Install]" | tee -a /lib/systemd/system/mongod.service \
+</p>
+<p>    &amp;&amp; echo "WantedBy=multi-user.target" | tee -a /lib/systemd/system/mongod.service
+</p>
+<p>##################### END INSTALLATION ####################
+</p>
+<p># Expose the default port<br/>
+EXPOSE 27017
+</p>
+<p># Default port to execute the entrypoint (MongoDB)
+</p>
+<p>CMD ["--port 27017"]
+</p>
+<p># Set default container command<br/>
+ENTRYPOINT /usr/bin/mongod
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.8"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_8">Building Our First Image</a></h3>
+
+<p>Using the explanations from before, we are ready to create our first MongoDB image with docker!
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.8.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_8_1">$ docker build -t my_mongodb .</a></h4>
+
+<p>Note: The -t [name] flag here is used to tag the image. To learn more about what else you can do during build, run sudo docker build --help.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.9"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_9">Running A MongoDB Instance</a></h3>
+
+<p>Using the image we have build, we can now proceed to the final step: creating a container running a MongoDB instance inside, using a name of our choice (if desired with -name [name]).
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.9.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_9_1">$ docker run --name my_first_mdb_instance -i -t my_mongodb</a></h4>
+
+<p>Note: If a name is not set, we will need to deal with complex, alphanumeric IDs which can be obtained by listing all the containers using sudo docker ps -l.
+</p>
+<p>Note: To detach yourself from the container, use the escape sequence CTRL+P followed by CTRL+Q.</p>
 
 </body>
 </html>
