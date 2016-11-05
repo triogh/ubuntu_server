@@ -284,10 +284,10 @@ Dockerfile syntax consists of two kind of main line blocks: comments and command
 # Line blocks used for commenting
 command argument argument ..
 
-    A Simple Example
+A Simple Example
 
-    # Print "Hello docker!"
-    RUN echo "Hello docker!"
+        # Print "Hello docker!"
+        RUN echo "Hello docker!"
 
 Dockerfiles use simple, clean, and clear syntax which makes them strikingly easy to create and use. They are designed to be self explanatory, especially because they allow commenting just like a good and properly written application source-code. 
 
@@ -307,8 +307,8 @@ The ADD command gets two arguments: a source and a destination. It basically cop
 
 Example
 
-# Usage, ADD [source directory or URL] [destination directory]
-ADD /my_app_folder /my_app_folder
+        # Usage, ADD [source directory or URL] [destination directory]
+        ADD /my_app_folder /my_app_folder
 
 
 cmd
@@ -320,8 +320,8 @@ To clarify. an example for CMD would be running an application upon creation of 
 
 Example
 
-# Usage,  CMD application "argument", "argument", ..
-CMD "echo" "Hello docker!"
+        # Usage,  CMD application "argument", "argument", ..
+        CMD "echo" "Hello docker!"
 
 
 entrypoint
@@ -333,15 +333,15 @@ If you couple ENTRYPOINT with CMD, you can remove "application" from CMD and jus
 
 Example:
 
-# Usage: ENTRYPOINT application "argument", "argument", ..
-# Remember: arguments are optional. They can be provided by CMD
-#           or during the creation of a container. 
-ENTRYPOINT echo
+        # Usage: ENTRYPOINT application "argument", "argument", ..
+        # Remember: arguments are optional. They can be provided by CMD
+        #           or during the creation of a container. 
+        ENTRYPOINT echo
 
-# Usage example with CMD:
-# Arguments set with CMD can be overridden during *run*
-CMD "Hello docker!"
-ENTRYPOINT echo  
+        # Usage example with CMD:
+        # Arguments set with CMD can be overridden during *run*
+        CMD "Hello docker!"
+        ENTRYPOINT echo  
 
 
 env
@@ -351,8 +351,8 @@ The ENV command is used to set the environment variables (one or more). These va
 
 Example:
 
-#Usage: ENV key value
-ENV SERVER_WORKS 4
+        #Usage: ENV key value
+        ENV SERVER_WORKS 4
 
 
 expose
@@ -362,8 +362,8 @@ The EXPOSE command is used to associate a specified port to enable networking be
 
 Example:
 
-#Usage: EXPOSE [port]
-EXPOSE 8080
+        #Usage: EXPOSE [port]
+        EXPOSE 8080
 
 
 from
@@ -373,8 +373,8 @@ FROM directive is probably the most crucial amongst all others for Dockerfiles. 
 
 Example:
 
-# Usage: FROM [image name]
-FROM ubuntu
+        # Usage: FROM [image name]
+        FROM ubuntu
 
 
 maintainer
@@ -384,8 +384,8 @@ One of the commands that can be set anywhere in the file - although it would be 
 
 Example:
 
-# Usage: MAINTAINER [name]
-MAINTAINER authors_name
+        # Usage: MAINTAINER [name]
+        MAINTAINER authors_name
 
 
 run
@@ -395,8 +395,8 @@ The RUN command is the central executing directive for Dockerfiles. It takes a c
 
 Example:
 
-# Usage: RUN [command]
-RUN aptitude install -y riak
+        # Usage: RUN [command]
+        RUN aptitude install -y riak
 
 
 user
@@ -406,8 +406,8 @@ The USER directive is used to set the UID (or username) which is to run the cont
 
 Example:
 
-# Usage: USER [UID]
-USER 751
+        # Usage: USER [UID]
+        USER 751
 
 
 volume
@@ -417,8 +417,8 @@ The VOLUME command is used to enable access from your container to a directory o
 
 Example:
 
-# Usage: VOLUME ["/dir_1", "/dir_2" ..]
-VOLUME ["/my_files"]
+        # Usage: VOLUME ["/dir_1", "/dir_2" ..]
+        VOLUME ["/my_files"]
 
 
 workdir
@@ -428,8 +428,8 @@ The WORKDIR directive is used to set where the command defined with CMD is to be
 
 Example:
 
-# Usage: WORKDIR /path
-WORKDIR ~/
+        # Usage: WORKDIR /path
+        WORKDIR ~/
 
 
 How to Use Dockerfiles
@@ -465,24 +465,24 @@ Defining Our File and Its Purpose
 
 Albeit optional, it is always a good practice to let yourself and everybody figure out (when necessary) what this file is and what it is intended to do. For this, we will begin our Dockerfile with fancy comments (i#) to describe it - and have it like cool kids.
 
-############################################################
 
-# Dockerfile to build MongoDB container images
+        ############################################################
+        # Dockerfile to build MongoDB container images
+        # Based on Ubuntu
+        ############################################################
 
-# Based on Ubuntu
-############################################################
 
 Setting The Base Image to Use
 ---
 
-# Set the base image to Ubuntu
-FROM ubuntu
+        # Set the base image to Ubuntu
+        FROM ubuntu
 
 Defining The Maintainer (Author)
 ---
 
-# File Author / Maintainer
-MAINTAINER Example McAuthor
+        # File Author / Maintainer
+        MAINTAINER Example McAuthor
 
 
 Updating The Application Repository List
@@ -490,36 +490,37 @@ Updating The Application Repository List
 
 Note: This step is not necessary, given that we are not using the repository right afterwards. However, it can be considered good practice.
 
-# Update the repository sources list
-RUN apt-get update
+
+        # Update the repository sources list
+        RUN apt-get update
 
 
 Setting Arguments and Commands for Downloading MongoDB
 ---
 
-################## BEGIN INSTALLATION ######################
 
-# Install MongoDB Following the Instructions at MongoDB Docs
-# Ref: http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
+        ################## BEGIN INSTALLATION ######################
+        # Install MongoDB Following the Instructions at MongoDB Docs
+        # Ref: http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
 
-# Add the package verification key
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
+        # Add the package verification key
+        RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
 
-# Add MongoDB to the repository sources list
+        # Add MongoDB to the repository sources list
 
-RUN echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list
+        RUN echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list
 
-# Update the repository sources list once more
+        # Update the repository sources list once more
 
-RUN apt-get update
+        RUN apt-get update
 
-# Install MongoDB package (.deb)
-RUN apt-get install -y mongodb-10gen
+        # Install MongoDB package (.deb)
+        RUN apt-get install -y mongodb-10gen
 
-# Create the default data directory
-RUN mkdir -p /data/db
+        # Create the default data directory
+        RUN mkdir -p /data/db
 
-##################### INSTALLATION END #####################
+        ##################### INSTALLATION END #####################
 
 MY NOTE: in the comments section it was said it's better practice to avoid using separate RUN directives where possible as each RUN command adds an additional layer to the image, creating unnecessary bloat. Later below in this text I have added a modified Dockerfile which follows this advice.
 
@@ -542,93 +543,85 @@ This should be mentioned in the section on the RUN command, since inadvertently 
 Setting The Default Port For MongoDB
 ---
 
-# Expose the default port
-EXPOSE 27017
+        # Expose the default port
+        EXPOSE 27017
 
-# Default port to execute the entrypoint (MongoDB)
-CMD ["--port 27017"]
+        # Default port to execute the entrypoint (MongoDB)
+        CMD ["--port 27017"]
 
-# Set default container command
-ENTRYPOINT usr/bin/mongod
+        # Set default container command
+        ENTRYPOINT usr/bin/mongod
 
 The resulting Dockerfile 
 ---
 
+https://github.com/triogh/ubuntu_server/blob/master/docs/example_docker/mongodb/Dockerfile
+
 Has some of my additional modifications related to RUN directives, and also some updates necessary for the Dockerfile to work in the present time (2016), since the tutorial was created in 2013. 
 
-###################################################
 
-# Dockerfile to build MongoDB container images
 
-# Based on Ubuntu
-###################################################
+        ###################################################
+        # Dockerfile to build MongoDB container images
+        # Based on Ubuntu
+        ###################################################
 
-# Set the base image to Ubuntu
-FROM ubuntu
+        # Set the base image to Ubuntu
+        FROM ubuntu
 
-# File Author / Maintainer
-MAINTAINER Example McAuthor
+        # File Author / Maintainer
+        MAINTAINER Example McAuthor
 
-# Update the repository sources list
-RUN apt-get update
+        # Update the repository sources list
+        RUN apt-get update
 
-##################### BEGIN INSTALLATION ####################
+        ##################### BEGIN INSTALLATION ####################
 
-# Install MongoDB Following the Instructions at MongoDB Docs
-# Ref: http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
+        # Install MongoDB Following the Instructions at MongoDB Docs
+        # Ref: http://docs.mongodb.org/manual/tutorial/install-mongodb-on-ubuntu/
 
-# Add the package verification key
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
+        # Add the package verification key
+        RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
 
-# Add MongoDB to the repository sources list
-RUN echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list
+        # Add MongoDB to the repository sources list
+        RUN echo "deb http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.2 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.2.list
 
-# Update the repository sources list once more
-RUN apt-get update
+        # Update the repository sources list once more
+        RUN apt-get update
 
-# Install MongoDB package (.deb)
-RUN apt-get install -y mongodb-org
+        # Install MongoDB package (.deb)
+        RUN apt-get install -y mongodb-org
 
-# Create the default data directory
-RUN mkdir -p /data/db
+        # Create the default data directory
+        RUN mkdir -p /data/db
 
-# ubuntu 16.04 specific
-# https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
+        # ubuntu 16.04 specific
+        # https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
-RUN echo "[Unit]" | tee -a /lib/systemd/system/mongod.service \
-    && echo "Description=High-performance, schema-free document-oriented database" | tee -a /lib/systemd/system/mongod.service \
+        RUN echo "[Unit]" | tee -a /lib/systemd/system/mongod.service \
+            && echo "Description=High-performance, schema-free document-oriented database" | tee -a /lib/systemd/system/mongod.service \
+            && echo "After=network.target" | tee -a /lib/systemd/system/mongod.service \
+            && echo "Documentation=https://docs.mongodb.org/manual" | tee -a /lib/systemd/system/mongod.service \
+            && echo "" | tee -a /lib/systemd/system/mongod.service \
+            && echo "[Service]" | tee -a /lib/systemd/system/mongod.service \
+            && echo "User=mongodb" | tee -a /lib/systemd/system/mongod.service \
+            && echo "Group=mongodb" | tee -a /lib/systemd/system/mongod.service \
+            && echo "ExecStart=/usr/bin/mongod --quiet --config /etc/mongod.conf" | tee -a /lib/systemd/system/mongod.service \
+            && echo "" | tee -a /lib/systemd/system/mongod.service \
+            && echo "[Install]" | tee -a /lib/systemd/system/mongod.service \
+            && echo "WantedBy=multi-user.target" | tee -a /lib/systemd/system/mongod.service
 
-    && echo "After=network.target" | tee -a /lib/systemd/system/mongod.service \
+        ##################### END INSTALLATION ####################
 
-    && echo "Documentation=https://docs.mongodb.org/manual" | tee -a /lib/systemd/system/mongod.service \
+        # Expose the default port
+        EXPOSE 27017
 
-    && echo "" | tee -a /lib/systemd/system/mongod.service \
+        # Default port to execute the entrypoint (MongoDB)
 
-    && echo "[Service]" | tee -a /lib/systemd/system/mongod.service \
+        CMD ["--port 27017"]
 
-    && echo "User=mongodb" | tee -a /lib/systemd/system/mongod.service \
-
-    && echo "Group=mongodb" | tee -a /lib/systemd/system/mongod.service \
-
-    && echo "ExecStart=/usr/bin/mongod --quiet --config /etc/mongod.conf" | tee -a /lib/systemd/system/mongod.service \
-
-    && echo "" | tee -a /lib/systemd/system/mongod.service \
-
-    && echo "[Install]" | tee -a /lib/systemd/system/mongod.service \
-
-    && echo "WantedBy=multi-user.target" | tee -a /lib/systemd/system/mongod.service
-
-##################### END INSTALLATION ####################
-
-# Expose the default port
-EXPOSE 27017
-
-# Default port to execute the entrypoint (MongoDB)
-
-CMD ["--port 27017"]
-
-# Set default container command
-ENTRYPOINT /usr/bin/mongod
+        # Set default container command
+        ENTRYPOINT /usr/bin/mongod
 
 
 Building Our First Image
@@ -653,3 +646,194 @@ $ docker run --name my_first_mdb_instance -i -t my_mongodb
 Note: If a name is not set, we will need to deal with complex, alphanumeric IDs which can be obtained by listing all the containers using sudo docker ps -l.
 
 Note: To detach yourself from the container, use the escape sequence CTRL+P followed by CTRL+Q.
+
+
+Title: docker-explained-how-to-containerize-and-use-nginx-as-a-proxy
+===
+Source: https://www.digitalocean.com/community/tutorials/docker-explained-how-to-containerize-and-use-nginx-as-a-proxy
+
+Added: Sat Nov  5 18:29:31 CET 2016
+Created: PostedDecember 16, 2013
+
+Introduction
++++
+In this DigitalOcean article, we will learn about quickly setting up docker, creating a docker container from a base image, and building it to run Nginx layer by layer. Afterwards, following our steps from the beginning, we will create a Dockerfile to automate this entire process. In the end, using this Nginx docker image, you will be able to create self-contained sandboxes running Nginx, which can be used to serve your "dockerised" applications.
+
+Docker in Brief
++++
+The docker project offers higher-level tools, working together, which are built on top of some Linux kernel features. The goal is to help developers and system administrators port applications - with all of their dependencies conjointly - and get them running across systems and machines - headache free.
+
+Docker achieves this by creating safe, LXC (i.e. Linux Containers) based environments for applications called “docker containers”. These containers are created using docker images, which can be built either by executing commands manually or automatically through Dockerfiles.
+
+
+Nginx in Brief
++++
+Nginx is a very high performant web server / (reverse)-proxy). It has reached its popularity due to being light weight, relatively easy to work with, and easy to extend (with add-ons / plug-ins). Thanks to its architecture, it is capable of handling a lot of requests (virtually unlimited), which - depending on your application or website load - could be really hard to tackle using older alternatives. It can be considered the tool to choose for serving static files such as images, scripts or style-sheets.
+
+Building a Docker Container With Nginx Installed
++++
+
+Note: Although after following this section we will have a running docker container with Nginx installed, it is definitely not the recommended method due to its complexity. However, it is here to offer you a chance to learn how to work with a live container and get familiarized with the commands we will need to define later to automate the process. To create a docker image with Nginx installed in a much better way, see the next section: Creating a Dockerfile to Automatically Build Nginx Image.
+
+Creating a Base Docker Container From Ubuntu
++++
+
+Using docker's RUN command, we will begin with creating a new container based on the Ubuntu image. We are going to attach a terminal to it using the “-t” flag.
+
+$ docker run -i -t -p 80:80 ubuntu /bin/bash
+---
+
+Note: After executing this command, docker might need to pull the Ubuntu image before creating a new container for you.
+
+Remember: You will be attached to the container you create. In order to detach yourself and go back to your main terminal access point, run the escape sequence: CTRL+P followed by CTRL+Q. Being attached to a docker container is like being connected to a new droplet from inside another.
+
+To attach yourself back to this container:
+
+    - List all running containers using sudo docker ps
+    - Find its ID
+    - Use "$ docker attach [id]" to attach back to its terminal
+
+Important: Please do not forget that since we are in a container, all the following commands will be executed there, without affecting the host.
+
+Preparing the Base Container for Nginx Installation
++++
+Update the list with the newly added source.
+
+apt-get update
+
+
+Before we proceed to install Nginx, there are some tools we should have installed such as nano - just in case.
+
+apt-get install -y nano wget dialog net-tools    
+
+
+
+Installing Nginx
++++
+Thanks to having it available in the repository, we can simply use apt-get to download and install nginx.
+
+apt-get install -y nginx
+
+
+Configuring Nginx
++++
+
+Using the text editor nano, which we have installed in the previous step, let's create a sample Nginx configuration to proxy connections to application servers.
+
+# Delete the default configuration
+rm -v /etc/nginx/nginx.conf
+
+# Create a blank one using nano text editor
+nano /etc/nginx/nginx.conf
+
+First, on top of the file, a line must be added to not to have Nginx spawn its processes and then quit.
+
+The reason we cannot allow this to happen is because docker depends on a single process to run (which can even be a process manager nonetheless) and when that process stops (i.e. quitting after spawning workers), the container stops.
+
+Start with the following as the first line of the nginx.conf:
+
+daemon off;
+---
+
+We will use a simple sample configuration to have Nginx run as a reverse proxy. Copy-and-paste the following after the daemon off; instruction.
+
+
+
+        worker_processes 1;
+        events { worker_connections 1024; }
+
+        http {
+
+            sendfile on;
+
+            gzip              on;
+            gzip_http_version 1.0;
+            gzip_proxied      any;
+            gzip_min_length   500;
+            gzip_disable      "MSIE [1-6]\.";
+            gzip_types        text/plain text/xml text/css
+                              text/comma-separated-values
+                              text/javascript
+                              application/x-javascript
+                              application/atom+xml;
+
+            # List of application servers
+            upstream app_servers {
+
+                server 127.0.0.1:8080;
+
+            }
+
+            # Configuration for the server
+            server {
+
+                # Running port
+                listen 80;
+
+                # Proxying the connections connections
+                location / {
+
+                    proxy_pass         http://app_servers;
+                    proxy_redirect     off;
+                    proxy_set_header   Host $host;
+                    proxy_set_header   X-Real-IP $remote_addr;
+                    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header   X-Forwarded-Host $server_name;
+
+                }
+            }
+        }
+
+
+
+
+Save and exit pressing CTRL+X and confirming with Y.  
+To run Nginx, you can execute the following:
+
+service nginx start
+
+And that's it! We now have Nginx running in a docker container, accessible from the outside world on port 80 as we set using the -p 80:80 flag.
+
+Remember: This Nginx file, albeit configured correctly, will not do anything since there are currently no application servers running on the server. Instead of this one, you can copy and use another example which simply works as a forward proxy for testing HTTP headers until you have your application server(s) installed and working.
+
+
+Creating the Dockerfile to Automatically Build the Image
++++
+
+As we have mentioned in the previous step, it is certainly not the recommended way to create containers this way for scalable production. The right way to do can be considered as using Dockerfiles to automate the build process in a structured way.
+
+After having gone through the necessary commands for downloading and installing Nginx inside a container, we can use the same knowledge to compose a Dockerfile that docker can use to build an image, which then can be used to run Nginx instances easily.
+
+Before we start working on the Dockerfile, let's quickly go over the basics.
+
+
+Dockerfile Basics
++++
+
+Dockerfiles are scripts containing commands declared successively which are to be executed in that order by docker to automatically create a new docker image. They help greatly with deployments.
+
+These files always begin with defining an base image using the FROM command. From there on, the build process starts and each following action taken forms the final image which will be committed on the host.
+
+Usage:
+
+        # Build an image using the Dockerfile at current location
+        # Tag the final image with [name] (e.g. *nginx*)
+        # Example: sudo docker build -t [name] .
+        $ docker build -t nginx_img . 
+
+Dockerfile Commands Overview
++++
+
+    - ADD: Copy a file from the host into the container
+    - CMD: Set default commands to be executed, or passed to the ENTRYPOINT
+    - ENTRYPOINT: Set the default entrypoint application inside the container
+    - ENV: Set environment variable (e.g. key = value)
+    - EXPOSE: Expose a port to outside
+    - FROM: Set the base image to use
+    - MAINTAINER: Set the author / owner data of the Dockerfile
+    - RUN: Run a command and commit the ending result (container) image
+    - USER: Set the user to run the containers from the image
+    - VOLUME: Mount a directory from the host to the container
+    - WORKDIR: Set the directory for the directives of CMD to be executed
+
+
