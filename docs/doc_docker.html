@@ -143,6 +143,52 @@
                <li><a href="#h-1.4.9">Creating the Dockerfile to Automatically Build the Image</a></li>
                <li><a href="#h-1.4.10">Dockerfile Basics</a></li>
                <li><a href="#h-1.4.11">Dockerfile Commands Overview</a></li>
+               <li><a href="#h-1.4.12">Creating the Dockerfile</a></li>
+               <li><a href="#h-1.4.13">Installation Instructions for Nginx</a></li>
+               <li><a href="#h-1.4.14">Bootstrapping</a></li>
+               <li><a href="#h-1.4.15">Final Dockerfile</a>
+                  <ul>
+                     <li><a href="#h-1.4.15.1">$ docker build -t my_nginx_image .</a></li>
+                     <li><a href="#h-1.4.15.2">$ docker run -it -p80:80 --name my_nginx_container [image]</a></li>
+                     <li><a href="#h-1.4.15.3">$ docker run -it -p80:80 --name [container_name] [image] /bin/bash</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.4.16">Using the Dockerfile to Automatically Build Nginx Containers</a>
+                  <ul>
+                     <li><a href="#h-1.4.16.1">$docker build -t nginx_img_1 . </a></li>
+                     <li><a href="#h-1.4.16.2">$ docker run --name nginx_cont_1 -p 80:80 -i -t nginx_img_1</a></li>
+                  </ul>
+               </li>
+            </ul>
+         </li>
+         <li><a href="#h-1.5">Title: docker-explained-how-to-create-docker-containers-running-memcached</a>
+            <ul>
+               <li><a href="#h-1.5.1">Introduction</a></li>
+               <li><a href="#h-1.5.2">Memcached in Brief</a></li>
+               <li><a href="#h-1.5.3">Basic Docker Commands</a></li>
+               <li><a href="#h-1.5.4">Getting Started with Creating Memcached Images</a></li>
+               <li><a href="#h-1.5.5">Quick Recap: What Are Dockerfiles?</a></li>
+               <li><a href="#h-1.5.6">Dockerfile Commands Overview</a></li>
+               <li><a href="#h-1.5.7">Creating a Dockerfile</a></li>
+               <li><a href="#h-1.5.8">Final Dockerfile</a></li>
+               <li><a href="#h-1.5.9">Creating the Docker Image for Memcached Containers</a>
+                  <ul>
+                     <li><a href="#h-1.5.9.1">$ docker build -t memcached_img .</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.5.10">Running dockerised Memcached Containers</a></li>
+               <li><a href="#h-1.5.11">Creating a Memcached Installed Container</a>
+                  <ul>
+                     <li><a href="#h-1.5.11.1">$ docker run --name memcached_ins -d -p 45001:11211 memcached_img</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.5.12">Limiting the Memory for a Memcached Container</a>
+                  <ul>
+                     <li><a href="#h-1.5.12.1">$ docker run --name memcached_ins -m 256m -d -p 45001:11211 memcached_img</a></li>
+                     <li><a href="#h-1.5.12.2">$ docker inspect memcached_ins | grep Memory</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.5.13">Testing the Memcached Container</a></li>
             </ul>
          </li>
       </ul>
@@ -829,14 +875,17 @@ nano /etc/nginx/nginx.conf
 
                 # Proxying the connections connections
                 location / {
-
-                    proxy_pass         <a href="http://app_servers">http://app_servers</a>;
-                    proxy_redirect     off;
-                    proxy_set_header   Host $host;
-                    proxy_set_header   X-Real-IP $remote_addr;
-                    proxy_set_header   X-Forwarded-For $proxy_add<u>x</u>forwarded_for;
-                    proxy_set_header   X-Forwarded-Host $server_name;
-
+</pre>
+<table summary="">
+<tr><td>proxy_pass</td><td><a href="http://app_servers">http://app_servers</a>;
+</td></tr><tr><td>proxy_redirect</td><td>off;
+</td></tr><tr><td>proxy_set_header</td><td>Host $host;
+</td></tr><tr><td>proxy_set_header</td><td>X-Real-IP $remote_addr;
+</td></tr><tr><td>proxy_set_header</td><td>X-Forwarded-For $proxy_add<u>x</u>forwarded_for;
+</td></tr><tr><td>proxy_set_header</td><td>X-Forwarded-Host $server_name;
+</td></tr>
+</table>
+<pre>
                 }
             }
         }
@@ -889,6 +938,568 @@ To run Nginx, you can execute the following:
   </li><li>VOLUME: Mount a directory from the host to the container
   </li><li>WORKDIR: Set the directory for the directives of CMD to be executed
 </li></ul>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.12"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_12">Creating the Dockerfile</a></h3>
 
+<p>To create a Dockerfile at the current location using the nano text editor, execute the following command:
+</p>
+<p>                nano Dockerfile
+</p>
+<p>Note: Append all the following lines one after the other to form the Dockerfile to be saved and used for building.
+Defining the Fundamentals
+</p>
+<p>Let's begin our Dockerfile by defining the basics (fundamentals) such as the FROM image (i.e. Ubuntu) and the MAINTAINER.
+</p>
+<pre>
+                ############################################################
+                # Dockerfile to build Nginx Installed Containers
+                # Based on Ubuntu
+                ############################################################
+
+                # Set the base image to Ubuntu
+                FROM ubuntu
+
+                # File Author / Maintainer
+                MAINTAINER Maintaner Name
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.13"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_13">Installation Instructions for Nginx</a></h3>
+
+<p>Following our steps from the previous section, let's form the block to have Nginx installed.
+</p>
+<pre>
+                # Install Nginx
+                # Update the repository
+                RUN apt-get update
+
+                # Install necessary tools
+                RUN apt-get install -y nano wget dialog net-tools
+
+                # Download and Install Nginx
+                RUN apt-get install -y nginx    
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.14"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_14">Bootstrapping</a></h3>
+
+<p>After adding the instructions for installing Nginx, let's finish off with configuring Nginx and getting Dockerfile to replace the default configuration file with one we provide during build.
+</p>
+<pre>
+                # Remove the default Nginx configuration file
+                RUN rm -v /etc/nginx/nginx.conf
+
+                # Copy a configuration file from the current directory
+                ADD nginx.conf /etc/nginx/
+
+                # Append "daemon off;" to the beginning of the configuration
+                RUN echo "daemon off;" &gt;&gt; /etc/nginx/nginx.conf
+
+                # Expose ports
+                EXPOSE 80
+
+                # Set the default command to execute
+                # when creating a new container
+                CMD service nginx start
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.15"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_15">Final Dockerfile</a></h3>
+
+<p>In the end, this is what the Dockerfile should look like:
+</p>
+<pre>
+                ############################################################
+                # Dockerfile to build Nginx Installed Containers
+                # Based on Ubuntu
+                ############################################################
+
+                # Set the base image to Ubuntu
+                FROM ubuntu
+
+                # File Author / Maintainer
+                MAINTAINER Maintaner Name
+
+                # Install Nginx
+
+                # Add application repository URL to the default sources
+                RUN echo "deb <a href="http://archive.ubuntu.com/ubuntu/">http://archive.ubuntu.com/ubuntu/</a> raring main universe" &gt;&gt; /etc/apt/sources.list
+
+                # Update the repository
+                RUN apt-get update
+
+                # Install necessary tools
+                RUN apt-get install -y nano wget dialog net-tools
+
+                # Download and Install Nginx
+                RUN apt-get install -y nginx  
+
+                # Remove the default Nginx configuration file
+                RUN rm -v /etc/nginx/nginx.conf
+
+                # Copy a configuration file from the current directory
+                ADD nginx.conf /etc/nginx/
+
+                # Append "daemon off;" to the beginning of the configuration
+                RUN echo "daemon off;" &gt;&gt; /etc/nginx/nginx.conf
+
+                # Expose ports
+                EXPOSE 80
+
+                # Set the default command to execute
+                # when creating a new container
+                CMD service nginx start
+</pre>
+<p>MY NOTE:<br/>
+Below is a Dockerfile, that builds an image with nginx installed and started.
+</p>
+<p>To build an image from the docker file below, you could issue the command below.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.15.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_15_1">$ docker build -t my_nginx_image .</a></h4>
+
+<p>To run a container with that image you could issue the command below.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.15.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_15_2">$ docker run -it -p80:80 --name my_nginx_container [image]</a></h4>
+
+<p>To run the same container and have a bash shell.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.15.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_15_3">$ docker run -it -p80:80 --name [container_name] [image] /bin/bash</a></h4>
+
+<pre>
+                ####################################################
+                # Dockerfile to build Nginx Installed Containers
+                # Based on Ubuntu
+                ####################################################
+
+                # Set the base image to Ubuntu
+                FROM ubuntu
+
+                # File Author / Maintainer
+                MAINTAINER User McExample
+
+                ##################### Install Nginx ####################
+
+                # Update the repository
+                # Install necessary tools
+                # Install Nginx
+                RUN apt-get update \
+                        &amp;&amp; apt-get install -y vim wget dialog net-tools \
+                        &amp;&amp; apt-get install -y nginx \
+                        &amp;&amp; echo "daemon off;" &gt;&gt; /etc/nginx/nginx.conf
+
+                # Expose ports
+                EXPOSE 80
+
+                # Set default command to execute when creating new container
+                CMD service nginx start
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.16"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_16">Using the Dockerfile to Automatically Build Nginx Containers</a></h3>
+
+<p>As we first went over in the "basics" section, Dockerfiles' usage consists of calling them with &acirc;Äúdocker build&acirc;Äù command.
+</p>
+<p>Since we are instructing docker to copy a configuration (i.e. nginx.conf) from the current directory to replace the default one, we need to make sure to have it alongside this Dockerfile before starting the build process.
+</p>
+<p>Note: The above explained procedure of copying in an Nginx configuration allows you great flexibility and saves a lot of time by not dealing with attaching and detaching yourself from containers to create configuration files. Now you can simply use one to directly build and run an image.
+</p>
+<p>Create a sample nginx.conf using the text editor nano:
+</p>
+<p>        nano nginx.conf
+</p>
+<p>And replace its contents to use it as a forward proxy for testing:
+</p>
+<pre>
+                worker_processes 1;
+                events { worker_connections 1024; }
+
+                http {
+
+                        sendfile on;
+
+                        server {
+
+                                listen 80;
+
+                                location / {
+                                        proxy_pass <a href="http://httpstat.us/">http://httpstat.us/</a>;
+                                        proxy_set_header  X-Real-IP  $remote_addr;
+                                }
+                        }
+                }
+</pre>
+<p>MY NOTE:<br/>
+The final Docker file I used succesfully.
+</p>
+<pre>
+                ####################################################
+                # Dockerfile to build Nginx Installed Containers
+                # Based on Ubuntu
+                ####################################################
+
+                # Set the base image to Ubuntu
+                FROM ubuntu
+
+                # File Author / Maintainer
+                MAINTAINER User McExample
+
+                ##################### Install Nginx ####################
+
+                # Update the repository
+                # Install necessary tools
+                # Install Nginx
+                RUN apt-get update \
+                        &amp;&amp; apt-get install -y vim wget dialog net-tools \
+                        &amp;&amp; apt-get install -y nginx \
+                        &amp;&amp; rm -v /etc/nginx/nginx.conf
+
+                # Copy a configuration file from the current directory
+                ADD nginx.conf /etc/nginx
+
+                # Expose ports
+                EXPOSE 80
+
+                # Set default command to execute when creating new container
+                CMD service nginx start
+</pre>
+<p>MY NOTE:<br/>
+The nginx.conf file I used, same as the one provided by Digital Ocean, except the one i succesfully used has "daemon off;" on top.
+</p>
+<pre>
+                daemon off;
+                worker_processes 1;
+                events { worker_connections 1024; }
+
+                http {
+
+                        sendfile on;
+
+                        server {
+
+                                listen 80;
+
+                                location / {
+                                        proxy_pass <a href="http://httpstat.us/">http://httpstat.us/</a>;
+                                        proxy_set_header  X-Real-IP  $remote_addr;
+                                }
+                        }
+                }
+</pre>
+<p>This docker image will allow us to port all our progress and quickly create containers running Nginx with a single command.
+</p>
+<p>To start using it, build a new container image with the following:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.16.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_16_1">$docker build -t nginx_img_1 . </a></h4>
+
+<p>And using that image - which we tagged as nginximg1 - we can run a new container:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.4.16.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_4_16_2">$ docker run --name nginx_cont_1 -p 80:80 -i -t nginx_img_1</a></h4>
+
+<p>Now you can visit the IP address of your droplet, and your Nginx running docker container shall do its job, forwarding you to the HTTP status testing page.
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<pre>
+                # Usage: Visit <a href="http://">http://</a>[my droplet's ip]
+                <a href="http://95.85.10.236/200">http://95.85.10.236/200</a>
+
+                Sample Response:
+
+                200 OK
+</pre>
+<h2><!-- #BeginTocAnchorNameBegin --><a name="h-1.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5">Title: docker-explained-how-to-create-docker-containers-running-memcached</a></h2>
+<p>Source: <a href="https://www.digitalocean.com/community/tutorials/docker-explained-how-to-create-docker-containers-running-memcached">https://www.digitalocean.com/community/tutorials/docker-explained-how-to-create-docker-containers-running-memcached</a>
+</p>
+<p>Added: Sun Nov  6 12:58:18 CET 2016<br/>
+Created: PostedDecember 16, 2013
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_1">Introduction</a></h3>
+
+<p>For the majority of web applications, it is extremely rare to find the CPU being the culprit for the dropped HTTP requests or choking the web server hosting them. It usually is an under-engineered setup with no caching layer involved, eating up all the resources of the backend data store (i.e. your database of choice).
+</p>
+<p>Memcached - which by now should need no introduction - can increase the performance of your application deployment stack greatly without making any amendments to your available resources (enabling you to squeeze every last bit of its juices).
+</p>
+<p>In this DigitalOcean article, especially keeping in mind those who host multiple web applications (e.g. multiple WordPress instances, Python Applications, etc.), we are going to create docker images to quickly start running (on-demand) Memcached containers which can be operated individually. These containers, kept and secured within their own environments, will work with the application being hosted to help them get better and faster.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_2">Memcached in Brief</a></h3>
+
+<p>Memcached is a distributed, open-source data storage engine. It was designed to store certain types of data in RAM (instead of slower rate traditional disks) for very fast retrievals by applications, cutting the amount of time it takes to process requests by reducing the number of queries performed against heavier datasets or APIs such as traditional databases (e.g. MySQL).
+</p>
+<p>By introducing a smart, well-planned, and optimized caching mechanism, it becomes possible to handle a seemingly larger amount of requests and perform more procedures by applications. This is the most important use case of Memcached, as it is with any other caching application or component.
+</p>
+<p>Heavily relied upon and used in production for web sites and various other applications, Memcached has become one of the go-to tools for increasing performance without -necessarily - needing to utilize further hardware (e.g. more servers or server resources).
+</p>
+<p>It works by storing keys and their matching values (up to 1 MB in size) onto an associative array (i.e. hash table) which can be scaled and distributed across a large number of virtual servers.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_3">Basic Docker Commands</a></h3>
+
+<p>docker CLI Usage:
+</p>
+<p>docker [option] [command] [arguments]
+</p>
+<p>Commands List
+</p>
+<p>Here is a summary of currently available (version 0.7.1) docker commands:
+</p>
+<table summary="">
+<tr><td>attach</td><td style="text-align: center;">- Attach to a running container
+</td></tr><tr><td>build</td><td style="text-align: center;">- Build a container from a Dockerfile
+</td></tr><tr><td>commit</td><td style="text-align: center;">- Create a new image from a container's changes
+</td></tr><tr><td>cp</td><td style="text-align: center;">- Copy files/folders from the containers filesystem to the host path
+</td></tr><tr><td>diff</td><td style="text-align: center;">- Inspect changes on a container's filesystem
+</td></tr><tr><td>events</td><td style="text-align: center;">- Get real time events from the server
+</td></tr><tr><td>export</td><td style="text-align: center;">- Stream the contents of a container as a tar archive
+</td></tr><tr><td>history</td><td style="text-align: center;">- Show the history of an image
+</td></tr><tr><td>images</td><td style="text-align: center;">- List images
+</td></tr><tr><td>import</td><td style="text-align: center;">- Create a new filesystem image from the contents of a tarball
+</td></tr><tr><td>info</td><td style="text-align: center;">- Display system-wide information
+</td></tr><tr><td>insert</td><td style="text-align: center;">- Insert a file in an image
+</td></tr><tr><td>inspect</td><td style="text-align: center;">- Return low-level information on a container
+</td></tr><tr><td>kill</td><td style="text-align: center;">- Kill a running container
+</td></tr><tr><td>load</td><td style="text-align: center;">- Load an image from a tar archive
+</td></tr><tr><td>login</td><td style="text-align: center;">- Register or Login to the docker registry server
+</td></tr><tr><td>logs</td><td style="text-align: center;">- Fetch the logs of a container
+</td></tr><tr><td>port</td><td style="text-align: center;">- Lookup the public-facing port which is NAT-ed to PRIVATE_PORT
+</td></tr><tr><td>ps</td><td style="text-align: center;">- List containers
+</td></tr><tr><td>pull</td><td style="text-align: center;">- Pull an image or a repository from the docker registry server
+</td></tr><tr><td>push</td><td style="text-align: center;">- Push an image or a repository to the docker registry server
+</td></tr><tr><td>restart</td><td style="text-align: center;">- Restart a running container
+</td></tr><tr><td>rm</td><td style="text-align: center;">- Remove one or more containers
+</td></tr><tr><td>rmi</td><td style="text-align: center;">- Remove one or more images
+</td></tr><tr><td>run</td><td style="text-align: center;">- Run a command in a new container
+</td></tr><tr><td>save</td><td style="text-align: center;">- Save an image to a tar archive
+</td></tr><tr><td>search</td><td style="text-align: center;">- Search for an image in the docker index
+</td></tr><tr><td>start</td><td style="text-align: center;">- Start a stopped container
+</td></tr><tr><td>stop</td><td style="text-align: center;">- Stop a running container
+</td></tr><tr><td>tag</td><td style="text-align: center;">- Tag an image into a repository
+</td></tr><tr><td>top</td><td style="text-align: center;">- Lookup the running processes of a container
+</td></tr><tr><td>version</td><td style="text-align: center;">- Show the docker version information
+</td></tr>
+</table>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_4">Getting Started with Creating Memcached Images</a></h3>
+
+<p>Building on our knowledge gained from the previous articles in the docker series, let's dive straight into building a Dockerfile to have docker automatically build Memcached installed images (which will be used to run sandboxed Memcached instances).
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_5">Quick Recap: What Are Dockerfiles?</a></h3>
+
+<p>Dockerfiles are scripts containing commands declared successively which are to be executed, in the order given, by docker to automatically create a new docker image. They help greatly with deployments.
+</p>
+<p>These files always begin with the definition of a base image by using the FROM command. From there on, the build process starts and each following action taken forms the final with commits (saving the image state) on the host.
+</p>
+<dl>
+  <dt>Usage</dt>
+<dd>
+</dd></dl>
+<pre>
+        # Build an image using the Dockerfile at current location
+        # Tag the final image with [name] (e.g. <em>nginx</em>)
+        # Example: sudo docker build -t [name] .
+        docker build -t memcached_img . 
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_6">Dockerfile Commands Overview</a></h3>
+
+<pre>
+ADD        - Copy a file from the host into the container
+CMD        - Set default commands to be executed, or passed to the ENTRYPOINT
+ENTRYPOINT        - Set the default entrypoint application inside the container
+ENV        - Set environment variable (e.g. "key = value")
+EXPOSE        - Expose a port to outside
+FROM        - Set the base image to use
+MAINTAINER        - Set the author / owner data of the Dockerfile
+RUN        - Run a command and commit the ending result (container) image
+USER        - Set the user to run the containers from the image
+VOLUME        - Mount a directory from the host to the container
+WORKDIR        - Set the directory for the directives of CMD to be executed
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_7">Creating a Dockerfile</a></h3>
+
+<p>Since Dockerfiles constitute of plain-text documents, creating one translates to launching your favourite text editor and writing the commands you want docker to execute in order to build an image. After you start working on the file, continue with adding all the content below (one after the other) before saving the final result.
+</p>
+<p>Note: You can find what the final Dockerfile will look like at the end of this section.
+</p>
+<p>Let's create an empty Dockerfile using nano text editor:
+</p>
+<p>nano Dockerfile
+</p>
+<p>We need to have all instructions (commands) and directives listed successively. However, everything starts with building on a base image (set with the FROM command).
+</p>
+<p>Let's define the purpose of our Dockerfile and declare the base image to use:
+</p>
+<pre>
+        ############################################################
+        # Dockerfile to run Memcached Containers
+        # Based on Ubuntu Image
+        ############################################################
+
+        # Set the base image to use to Ubuntu
+        FROM ubuntu
+
+        # Set the file maintainer (your name - the file's author)
+        MAINTAINER Maintaner Name
+</pre>
+<p>After this initial block of commands and declarations, we can begin with listing the instructions for Memcached installation.
+</p>
+<pre>
+        # Update the default application repository sources list
+        RUN apt-get update
+
+        # Install Memcached
+        RUN apt-get install -y memcached
+</pre>
+<p>Set the default port to be exposed to outside the container:
+</p>
+<pre>
+        # Port to expose (default: 11211)
+        EXPOSE 11211
+</pre>
+<p>Set the default execution command and entrpoint (i.e. Memcached daemon):
+</p>
+<pre>
+        # Default Memcached run command arguments
+        CMD ["-u", "root", "-m", "128"]
+
+        # Set the user to run Memcached daemon
+        USER daemon
+
+        # Set the entrypoint to memcached binary
+        ENTRYPOINT memcached
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.8"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_8">Final Dockerfile</a></h3>
+
+<pre>
+        ############################################################
+        # Dockerfile to run Memcached Containers
+        # Based on Ubuntu Image
+        ############################################################
+
+        # Set the base image to use to Ubuntu
+        FROM ubuntu
+
+        # Set the file maintainer (your name - the file's author)
+        MAINTAINER Maintaner Name
+
+        # Update the default application repository sources list
+        RUN apt-get update
+
+        # Install Memcached
+        RUN apt-get install -y memcached
+
+        # Port to expose (default: 11211)
+        EXPOSE 11211
+
+        # Default Memcached run command arguments
+        CMD ["-m", "128"]
+
+        # Set the user to run Memcached daemon
+        USER daemon
+
+        # Set the entrypoint to memcached binary
+        ENTRYPOINT memcached
+</pre>
+<p>Using this Dockerfile, we are ready to get started with dockerised Memcached containers!
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.9"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_9">Creating the Docker Image for Memcached Containers</a></h3>
+
+<p>We can now create our first Memcached image by following the usage instructions explained in the Dockerfile Basics section.
+</p>
+<p>Run the following command to create an image, tagged as "memcached_img":
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.9.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_9_1">$ docker build -t memcached_img .</a></h4>
+
+<p>Note: Do not forget the trailing . for docker to find the Dockerfile.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.10"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_10">Running dockerised Memcached Containers</a></h3>
+
+<p>It is very simple to create any number of perfectly isolated and self-contained memcached instances - now - thanks to the image we have obtained in the previous section. All we have to do is to create a new container with docker run.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.11"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_11">Creating a Memcached Installed Container</a></h3>
+
+<p>To create a new container, use the following command, modifying it to suit your requirements following this example:
+</p>
+<p># Example: docker run --name [container name] -p [port to access:port exposed] -i -t [memcached image name]
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.11.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_11_1">$ docker run --name memcached_ins -d -p 45001:11211 memcached_img</a></h4>
+
+<p>Now we will have a docker container named "memcachedins", accessible from port 45001, run using our image tagged "memcachedimg", which we built previously.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.12"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_12">Limiting the Memory for a Memcached Container</a></h3>
+
+<p>In order to limit the amount of memory a docker container process can use, simply set the -m [memory amount] flag with the limit.
+</p>
+<p>To run a container with memory limited to 256 MBs:
+</p>
+<p># Example: sudo docker run -name [name] -m [Memory (int)][memory unit (b, k, m or g)] -d (to run not to attach) -p (to set access and expose ports) [image ID]
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.12.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_12_1">$ docker run --name memcached_ins -m 256m -d -p 45001:11211 memcached_img</a></h4>
+
+<p>To confirm the memory limit, you can inspect the container:
+</p>
+<p># Example: docker inspect [container ID] | grep Memory
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.12.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_12_2">$ docker inspect memcached_ins | grep Memory</a></h4>
+
+<p>Note: The command above will grab the memory related information from the inspection output. To see all the relevant information regarding your container, opt for docker inspect [container ID].
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.5.13"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_5_13">Testing the Memcached Container</a></h3>
+
+<p>There are various ways to try your newly created Memcached running container(s). We will use a simple Python CLI application for this. However, you can just get to production with your application using caching add-ons, frameworks, or libraries.
+</p>
+<p>Make sure that your host has the necessary libraries for Python / Memcached:
+</p>
+<pre>
+                sudo apt-get update &amp;&amp; sudo apt-get -y upgrade 
+                sudo apt-get install -y python-pip
+                pip install python-memcached
+</pre>
+<p>Let's create a simple Python script called "mc.py" using nano:
+</p>
+<p>nano cache.py
+</p>
+<p>Copy-and-paste the below (self-explanatory) content inside:
+</p>
+<pre>
+                # Import python-memcache and sys for arguments
+                import memcache
+                import sys
+
+                # Set address to access the Memcached instance
+                addr = 'localhost'
+
+                # Get number of arguments
+                # Expected format: python cache.py [memcached port] [key] [value]
+                len_argv = len(sys.argv)
+
+                # At least the port number and a key must be supplied
+                if len_argv &lt; 3:
+                        sys.exit("Not enough arguments.")
+
+                # Port is supplied and a key is supplied - let's connect!
+                port  = sys.argv[1]
+                cache = memcache.Client(["{0}:{1}".format(addr, port)])
+
+                # Get the key
+                key   = str(sys.argv[2])
+
+                # If a value is also supplied, set the key-value pair
+                if len_argv == 4:
+
+                        value = str(sys.argv[3])    
+                        cache.set(key, value)
+
+                        print "Value for {0} set!".format(key)
+
+                # If a value is not supplied, return the value for the key
+                else:
+
+                        value = cache.get(key)
+
+                        print "Value for {0} is {1}.".format(key, value) 
+</pre>
+<p>Testing a docker memcached instance using the script above from your host:
+</p>
+<pre>
+        # Example: python cache.py [port] [key] [value]
+                python cache.py 45001 my_test_key test_value
+
+        # Return: Value for my_test_key set
+
+        # See if the key is set:
+                python cache.py 45001 my_test_key
+
+        # Return: Value for my_test_key is test_value.
+</pre>
 </body>
 </html>
