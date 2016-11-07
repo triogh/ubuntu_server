@@ -56,7 +56,7 @@
                </li>
                <li><a href="#h-1.2.9">Running a container:</a>
                   <ul>
-                     <li><a href="#h-1.2.9.1">$ docker run c629b7d70666</a></li>
+                     <li><a href="#h-1.2.9.1">$ docker start c629b7d70666</a></li>
                   </ul>
                </li>
                <li><a href="#h-1.2.10">Stopping a container:</a>
@@ -191,6 +191,47 @@
                <li><a href="#h-1.5.13">Testing the Memcached Container</a></li>
             </ul>
          </li>
+         <li><a href="#h-1.6">Title: docker-explained-how-to-containerize-python-web-applications</a>
+            <ul>
+               <li><a href="#h-1.6.1">Introduction</a></li>
+               <li><a href="#h-1.6.2">Building a Docker Container To Sandbox Python WSGI Apps</a></li>
+               <li><a href="#h-1.6.3">Creating a Base Docker Container From Ubuntu</a>
+                  <ul>
+                     <li><a href="#h-1.6.3.1">$ docker run -i -t -p 80:80 ubuntu /bin/bash</a></li>
+                     <li><a href="#h-1.6.3.2">CTRL+P followed by CTRL+Q -detach from running container</a></li>
+                     <li><a href="#h-1.6.3.3">$ docker attach [id] -attach to running container</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.6.4">Preparing the Base Container for the Installation</a></li>
+               <li><a href="#h-1.6.5">Installing Common Python Tools for Deployment</a></li>
+               <li><a href="#h-1.6.6">Installing The Web Application and Its Dependencies</a></li>
+               <li><a href="#h-1.6.7">How to get your application repository and its requirements inside a container</a></li>
+               <li><a href="#h-1.6.8">Configuring your Python WSGI Application</a></li>
+               <li><a href="#h-1.6.9">Creating the Dockerfile to Automatically Build the Image</a></li>
+               <li><a href="#h-1.6.10">Dockerfile Basics</a>
+                  <ul>
+                     <li><a href="#h-1.6.10.1">$ docker build -t nginx_img . </a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.6.11">Dockerfile Commands Overview</a></li>
+               <li><a href="#h-1.6.12">Creating the Dockerfile</a>
+                  <ul>
+                     <li><a href="#h-1.6.12.1">Defining the Fundamentals</a></li>
+                     <li><a href="#h-1.6.12.2">Updating the Repository and Installing necessary packages</a></li>
+                     <li><a href="#h-1.6.12.3">Application Deployment</a></li>
+                     <li><a href="#h-1.6.12.4">Bootstrapping Everything</a></li>
+                     <li><a href="#h-1.6.12.5">Final Dockerfile</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.6.13">Using the Dockerfile to Automatically Build Containers</a>
+                  <ul>
+                     <li><a href="#h-1.6.13.1">$ docker build -t my_application_img . </a></li>
+                     <li><a href="#h-1.6.13.2">$ docker run -name my_application_instance -p 80:80 -i -t my_application_img</a></li>
+                  </ul>
+               </li>
+            </ul>
+         </li>
+         <li><a href="#h-1.7">Title: dockerfile_best-practices</a></li>
       </ul>
    </li>
 </ul>
@@ -359,9 +400,11 @@ Created: PostedDecember 11, 2013
 </p>
 <h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.9"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_9">Running a container:</a></h3>
 
-<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.9.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_9_1">$ docker run c629b7d70666</a></h4>
-<p>-usage: docker run [container ID]<br/>
--when you create a container and it stops (either due to its process ending or you stopping it explicitly), you can use 'run' to get the container working again with the same command used to create it.
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.9.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_9_1">$ docker start c629b7d70666</a></h4>
+<p>-usage: docker start [container ID]<br/>
+-when you create a container and it stops (either due to its process ending or you stopping it explicitly), you can use 'start' to get the container working again with the same command used to create it.
+</p>
+<p>MY NOTE: I think "docker run [image]" is used to create a container from an image, while "docker start [container ID]" is used to start an already created container, which was stopped for some reason. That is why I changed 'run' to 'start' in the command example given above, and in it's description.
 </p>
 <h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.10"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_10">Stopping a container:</a></h3>
 
@@ -1501,5 +1544,456 @@ WORKDIR        - Set the directory for the directives of CMD to be executed
 
         # Return: Value for my_test_key is test_value.
 </pre>
+<h2><!-- #BeginTocAnchorNameBegin --><a name="h-1.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6">Title: docker-explained-how-to-containerize-python-web-applications</a></h2>
+<p>Source: <a href="https://www.digitalocean.com/community/tutorials/docker-explained-how-to-containerize-python-web-applications">https://www.digitalocean.com/community/tutorials/docker-explained-how-to-containerize-python-web-applications</a>
+</p>
+<p>Added: Sun Nov  6 18:32:49 CET 2016<br/>
+Created: PostedDecember 17, 2013
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_1">Introduction</a></h3>
+
+<p>The threat of having a web application hijacked and used for taking over the entire host is a vast and scary one. It has long been a challenge to keep things isolated from one another for enhanced security, especially if the applications belong to different clients. Many measures can be taken to prevent this unfortunate scenario, however, they are usually too costly (both on time and resources) or too complicated for most developers' or administrators' use cases.
+</p>
+<p>In this DigitalOcean article, we'll talk about "containerizing" Python web applications in order to have them in very secure sandboxes, absolutely kept within their own environments (unless you explicitly "link" them to another). In order to achieve this, we'll see about creating a docker container to host a Python web application step-by-step, finally bootstrapping our build processes with a Dockerfile to fully automate it.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_2">Building a Docker Container To Sandbox Python WSGI Apps</a></h3>
+
+<p>After having installed docker on our VPS and having quickly gone over its commands, we are ready to start with the actual work to create our docker container running a Python WSGI Application.
+</p>
+<p>Note: The following section will enable you to have a dockerized (containerized) Python WSGI web application. However, it is definitely not the recommended method due to its complexity and impracticability. It is here to offer you a chance to learn how to work with a live container and get familiar with the commands we will need to define later in the next section to automate the process.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_3">Creating a Base Docker Container From Ubuntu</a></h3>
+
+<p>Using docker's RUN command, we will begin with creating a new container based on the Ubuntu image. We are going to attach a terminal to it using the -t flag and will have bash as the running process.
+</p>
+<p>We are going to expose port 80 so that our application will be accessible from the outside. In future, you might want to load-balance multiple instances and "link" containers to each other to access them using a reverse-proxy running container, for example.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.3.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_3_1">$ docker run -i -t -p 80:80 ubuntu /bin/bash</a></h4>
+
+<p>Note: After executing this command, docker might need to pull the Ubuntu image before creating a new container for you.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.3.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_3_2">CTRL+P followed by CTRL+Q -detach from running container</a></h4>
+
+<p>Remember: You will be attached to the container you create. In order to detach yourself and go back to your main terminal access point, run the escape sequence: CTRL+P followed by CTRL+Q. Being attached to a docker container is like being connected to a new droplet from inside another.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.3.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_3_3">$ docker attach [id] -attach to running container</a></h4>
+
+<p>To attach yourself back to this container:
+</p>
+<ul>
+  <li>List all running containers using "docker ps"
+  </li><li>Find its ID
+  </li><li>Use "docker attach [id]" to attach back to its terminal
+</li></ul>
+<p>Important: Please do not forget that since we are in a container, all the following commands will be executed there, without affecting the host it resides.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_4">Preparing the Base Container for the Installation</a></h3>
+
+<p>Update the list with the newly added source.
+</p>
+<p>        apt-get update
+</p>
+<p>Before we proceed with setting up Python WSGI applications, there are some tools we should have such as nano, tar, curl, etc. - just in case.
+</p>
+<p>Let's download some useful tools inside our container.
+</p>
+<pre>
+                apt-get install -y tar \
+                           git \
+                           curl \
+                           nano \
+                           wget \
+                           dialog \
+                           net-tools
+                           build-essential
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_5">Installing Common Python Tools for Deployment</a></h3>
+
+<p>For our tutorial (as an example), we are going to create a very basic Flask application. After following this article, you can use and deploy your favorite framework instead, the same way you would deploy it on a virtual server.
+</p>
+<p>Remember: All the commands and instructions below still take place inside a container, which acts almost as if it is a brand new droplet of its own.
+</p>
+<p>Let's begin our deployment process with installing Python and pip the Python package manager:
+</p>
+<pre>
+        # Install pip's dependency: setuptools:
+        apt-get install -y python python-dev python-distribute python-pip
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_6">Installing The Web Application and Its Dependencies</a></h3>
+
+<p>Before we begin with creating a sample application, we better make sure that everything - i.e. all the dependencies - are there. First and foremost, you are likely to have your Web Application Framework (WAF) as your application's dependency (i.e. Flask).
+</p>
+<p>As we have pip installed and ready to work, we can use it to pull all the dependencies and have them set up inside our container:
+</p>
+<pre>
+        # Download and install Flask framework:
+        pip install flask
+</pre>
+<p>After installing pip, let's create a basic, sample Flask application inside a "my_application" folder which is to contain everything.
+</p>
+<pre>
+        # Make a my_application folder
+        mkdir my_application
+
+        # Enter the folder
+        cd my_application 
+</pre>
+<p>Let's create a single, one page flask "Hello World!" application using nano.
+</p>
+<pre>
+                # Create a sample (app.py) with nano:
+                nano app.py
+</pre>
+<p>And copy-and-paste the contents below for this small application we have just mentioned:
+</p>
+<pre>
+                from flask import Flask
+                app = Flask(__name__)
+
+                @app.route("/")
+                def hello():
+                        return "Hello World!"
+
+                if __name__ == "__main__":
+                        app.run()
+</pre>
+<p>Note: You can create your a list of your actual application's dependencies using pip. To see how, check out our tutorial Common Python Tools: Using virtualenv, Installing with Pip, and Managing Packages.
+</p>
+<p><a href="https://www.digitalocean.com/community/articles/common-python-tools-using-virtualenv-installing-with-pip-and-managing-packages">https://www.digitalocean.com/community/articles/common-python-tools-using-virtualenv-installing-with-pip-and-managing-packages</a>
+</p>
+<p>Our final application folder structure:
+</p>
+<pre>
+                /my_application
+                        |
+                        |- requirements.txt  # File containing list of dependencies
+                        |- /app              # Application module (which should have your app)
+                        |- app.py            # WSGI file containing the "app" callable
+                        |- server.py         # Optional: To run the app servers (CherryPy)
+</pre>
+<p>Note: Please see the following section regarding the "server.py" - Configuring your Python WSGI Application .
+</p>
+<p>Remember: This application folder will be created inside the container. When you are automatically building images (see the following section on Dockerfiles), you will need to make sure to have this structure on the host, alongside the Dockerfile.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_7">How to get your application repository and its requirements inside a container</a></h3>
+
+<p>In the above example, we created the application directory inside the container. However, you will not be doing that to deploy your application. You are rather likely to pull its source from a repository.
+</p>
+<p>There are several ways to copy your repository inside a container.
+</p>
+<p>Below explained are two of them:
+</p>
+<pre>
+                # Example [1]
+                # Download the application using git:
+                # Usage: git clone [application repository URL]
+                # Example:
+                git clone <a href="https://github.com/mitsuhiko/flask/tree/master/examples/flaskr">https://github.com/mitsuhiko/flask/tree/master/examples/flaskr</a>
+
+                # Example [2]
+                # Download the application tarball:
+                # Usage: wget [application repository tarball URL]
+                # Example: (make sure to use an actual, working URL)
+                wget <a href="http://www.github.com/example_usr/application/tarball/v.v.x">http://www.github.com/example_usr/application/tarball/v.v.x</a>
+
+                # Expand the tarball and extract its contents:
+                # Usage: tar vxzf [tarball filename .tar (.gz)]
+                # Example: (make sure to use an actual, working URL)
+                tar vxzf application.tar.gz
+
+                # Download and install your application dependencies with pip.
+                # Download the requirements.txt (pip freeze output) and use pip to install them all:
+                # Usage: curl [URL for requirements.txt] | pip install -r -
+                # Example: (make sure to use an actual, working URL)
+                curl <a href="http://www.github.com/example_usr/application/requirements.txt">http://www.github.com/example_usr/application/requirements.txt</a> | pip install -r -
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.8"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_8">Configuring your Python WSGI Application</a></h3>
+
+<p>To serve this application, you will need a web server. The web server, which powers the WSGI app, needs to be installed in the same container as the application's other resources. In fact, it will be the process that docker runs.
+</p>
+<p>Note: In this example, we will use CherryPy's built-in production ready HTTP web server due to its simplicity. You can use Gunicorn, CherryPy or even uWSGI (and set them up behind Nginx) by following our tutorials on the subject.
+</p>
+<p>Download and install CherryPy with pip:
+</p>
+<p>                pip install cherrypy
+</p>
+<p>Create a "server.py" to serve the web application from "app.py":
+</p>
+<p>                nano server.py
+</p>
+<p>Copy and paste the contents from below for the server to import your application and start serving it:
+</p>
+<pre>
+                # Import your application as:
+                # from app import application
+                # Example:
+
+                from app import app
+
+                # Import CherryPy
+                import cherrypy
+
+                if __name__ == '__main__':
+
+                        # Mount the application
+                        cherrypy.tree.graft(app, "/")
+
+                        # Unsubscribe the default server
+                        cherrypy.server.unsubscribe()
+
+                        # Instantiate a new server object
+                        server = cherrypy._cpserver.Server()
+
+                        # Configure the server object
+                        server.socket_host = "<a href="telnet://0.0.0.0">0.0.0.0</a>"
+                        server.socket_port = 80
+                        server.thread_pool = 30
+
+                        # For SSL Support
+                        # server.ssl_module            = 'pyopenssl'
+                        # server.ssl_certificate       = 'ssl/certificate.crt'
+                        # server.ssl_private_key       = 'ssl/private.key'
+                        # server.ssl_certificate_chain = 'ssl/bundle.crt'
+
+                        # Subscribe this server
+                        server.subscribe()
+
+                        # Start the server engine (Option 1 <em>and</em> 2)
+
+                        cherrypy.engine.start()
+                        cherrypy.engine.block()
+</pre>
+<p>And that's it! Now you can have a "dockerized" Python web application securely kept in its sandbox, ready to serve thousands and thousands of client requests by simply running:
+</p>
+<p>                python server.py
+</p>
+<p>This will run the server on the foreground. If you would like to stop it, press CTRL+C.
+</p>
+<p>To run the server in the background, run the following:
+</p>
+<p>                python server.py &amp;
+</p>
+<p>    When you run an application in the background, you will need to use a process manager (e.g. htop) to kill (or stop) it.
+</p>
+<p>Note: To learn more about configuring Python WSGI applications for deployment with CherryPy, check out our tutorial: How to deploy Python WSGI apps Using CherryPy Web Server
+<a href="https://www.digitalocean.com/community/tutorials/how-to-deploy-python-wsgi-applications-using-a-cherrypy-web-server-behind-nginx">https://www.digitalocean.com/community/tutorials/how-to-deploy-python-wsgi-applications-using-a-cherrypy-web-server-behind-nginx</a>
+</p>
+<p>To test that everything is running smoothly, which they should given that all the port allocations are already taken care of, you can visit <a href="http://">http://</a>[your droplet's IP] with your browser to see the "Hello World!" message.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.9"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_9">Creating the Dockerfile to Automatically Build the Image</a></h3>
+
+<p>As we have mentioned in the previous step, it is certainly not the recommended way to create containers this way for a scalable production deployment. The right way to do can be considered as using Dockerfiles to automate the build process in a structured way.
+</p>
+<p>After having gone through the necessary commands for downloading and installing inside a container, we can use the same knowledge to compose a Dockerfile that docker can use to build an image from, which then can be used to run a Python WSGI application container easily.
+</p>
+<p>Before we start working on the Dockerfile, let's quickly go over the basics.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.10"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_10">Dockerfile Basics</a></h3>
+
+<p>Dockerfiles are scripts containing commands declared successively, which are to be executed in that order by docker to automatically create a new docker image. They help greatly with deployments.
+</p>
+<p>These files always begin with defining an base image using the FROM command. From there on, the build process starts and each following action taken forms the final image which will be committed on the host.
+</p>
+<dl>
+  <dt>Usage</dt>
+<dd>                # Build an image using the Dockerfile at current location
+                # Tag the final image with [name] (e.g. <em>nginx</em>)
+                # Example: docker build -t [name] .
+</dd></dl>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.10.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_10_1">$ docker build -t nginx_img . </a></h4>
+
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.11"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_11">Dockerfile Commands Overview</a></h3>
+
+<pre>
+                ADD
+                Copy a file from the host into the container
+                CMD
+                Set default commands to be executed, or passed to the ENTRYPOINT
+                ENTRYPOINT
+                Set the default entrypoint application inside the container
+                ENV
+                Set environment variable (e.g. "key = value")
+                EXPOSE
+                Expose a port to outside
+                FROM
+                Set the base image to use
+                MAINTAINER
+                Set the author / owner data of the Dockerfile
+                RUN
+                Run a command and commit the ending result (container) image
+                USER
+                Set the user to run the containers from the image
+                VOLUME
+                Mount a directory from the host to the container
+                WORKDIR
+                Set the directory for the directives of CMD to be executed
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.12"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_12">Creating the Dockerfile</a></h3>
+
+<p>To create a Dockerfile at the current location using the nano text editor, execute the following command:
+</p>
+<p>                nano Dockerfile
+</p>
+<p>Note: Append all the following lines one after the other to form the Dockerfile.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.12.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_12_1">Defining the Fundamentals</a></h4>
+
+<p>Let's begin our Dockerfile by defining the basics (fundamentals) such as the FROM image (i.e. Ubuntu) and the MAINTAINER.
+</p>
+<p>Append the following:
+</p>
+<pre>
+                ############################################################
+                # Dockerfile to build Python WSGI Application Containers
+                # Based on Ubuntu
+                ############################################################
+
+                # Set the base image to Ubuntu
+                FROM ubuntu
+
+                # File Author / Maintainer
+                MAINTAINER Maintaner Name
+</pre>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.12.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_12_2">Updating the Repository and Installing necessary packages</a></h4>
+
+<p>After updating the default application repository sources list, we can begin our deployment process by getting the basic applications we will need.
+</p>
+<p>For deploying Python WSGI applications, you are extremely likely to need some of the tools which we worked with before (e.g. pip). Let's install them now before proceeding with setting up the framework (i.e. your WAF) and the your web application server (WAS) of choice.
+</p>
+<pre>
+                # Update the sources list
+                # Install basic applications
+                # Install Python and Basic Python Tools
+                RUN apt-get update \
+                        &amp;&amp; apt-get install -y tar git curl nano wget dialog net-tools build-essential \
+                        &amp;&amp; apt-get install -y python python-dev python-distribute python-pip
+</pre>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.12.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_12_3">Application Deployment</a></h4>
+
+<p>Given that we are building docker images to deploy Python web applications, we can very all take advantage of docker's ADD command to copy the application repository, preferably with a REQUIREMENTS file to quickly get running in one single step.
+</p>
+<p>Note: To package everything together in a single file and not to repeat ourselves, an application folder, structured similarly to the one below might be a good way to go.
+</p>
+<p>Example application folder structure:
+</p>
+<pre>
+                /my_application
+                        |
+                        |- requirements.txt  # File containing list of dependencies
+                        |- /app              # Application module
+                        |- app.py            # WSGI file containing the "app" callable
+                        |- server.py         # Optional: To run the app servers (CherryPy)
+</pre>
+<p>Note: To see about creating this structure, please roll back up and refer to the section Installing The Web Application and Its Dependencies.
+</p>
+<p>Append the following:
+</p>
+<pre>
+                # Copy the application folder inside the container
+                ADD /my_application /my_application
+</pre>
+<p>Note: If you want to deploy from an online host git repository, you can use the following command to clone:
+</p>
+<p>                RUN git clone [application repository URL]
+</p>
+<p>Please do not forget to replace the URL placeholder with your actual one.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.12.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_12_4">Bootstrapping Everything</a></h4>
+
+<p>After adding the instructions for copying the application, let's finish off with final configurations such as pulling the dependencies from the requirements.txt.
+</p>
+<pre>
+                # Get pip to download and install requirements:
+                RUN pip install -r /my_application/requirements.txt
+
+                # Expose ports
+                EXPOSE 80
+
+                # Set the default directory where CMD will execute
+                WORKDIR /my_application
+
+                # Set the default command to execute
+                # when creating a new container
+                # i.e. using CherryPy to serve the application
+                CMD python server.py
+</pre>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.12.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_12_5">Final Dockerfile</a></h4>
+
+<p>In the end, this is what the Dockerfile should look like:
+</p>
+<pre>
+                ############################################################
+                # Dockerfile to build Python WSGI Application Containers
+                # Based on Ubuntu
+                ############################################################
+
+                # Set the base image to Ubuntu
+                FROM ubuntu
+
+                # File Author / Maintainer
+                MAINTAINER Maintaner Name
+
+                # Update the sources list
+                # Install basic applications
+                # Install Python and Basic Python Tools
+                RUN apt-get update \
+                        &amp;&amp; apt-get install -y tar git curl nano wget dialog net-tools build-essential \
+                        &amp;&amp; apt-get install -y python python-dev python-distribute python-pip
+
+                # Copy the application folder inside the container
+                # Note: If you want to deploy from an online host git repository, you can use the following command to clone:
+                # RUN git clone [application repository URL]
+                ADD /my_application /my_application
+
+                # Get pip to download and install requirements
+                RUN pip install -r /my_application/requirements.txt
+
+                # Expose ports
+                EXPOSE 80
+
+                # Set the default directory where CMD will execute
+                WORKDIR /my_application
+
+                # Set the default command to execute
+                # When creating a new container
+                # i.e. using CherryPy to serve the application
+                CMD python server.py
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.13"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_13">Using the Dockerfile to Automatically Build Containers</a></h3>
+
+<p>As we first went over in the "basics" section, Dockerfiles' usage consists of calling them with docker build command.
+</p>
+<p>Since we are instructing docker to copy an application folder (i.e. /my_application) from the current directory, we need to make sure to have it alongside this Dockerfile before starting the build process.
+</p>
+<p>This docker image will allow us to quickly create containers running Python WSGI applications with a single command.
+</p>
+<p>To start using it, build a new container image with the following:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.13.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_13_1">$ docker build -t my_application_img . </a></h4>
+
+<p>And using that image - which we tagged myapplicationimg - we can run a new container running the application with:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.6.13.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_6_13_2">$ docker run -name my_application_instance -p 80:80 -i -t my_application_img</a></h4>
+
+<p>Now you can visit the IP address of your droplet, and your application will be running via a docker container.
+</p>
+<dl>
+  <dt>Example</dt>
+<dd>
+</dd></dl>
+<pre>
+                # Usage: Visit <a href="http://">http://</a>[my droplet's ip]
+                <a href="http://95.85.10.236/">http://95.85.10.236/</a>
+
+                Sample Response:
+
+                Hello World!
+</pre>
+<h2><!-- #BeginTocAnchorNameBegin --><a name="h-1.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_7">Title: dockerfile_best-practices</a></h2>
+<p>Source: <a href="https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/">https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/</a>
+</p>
+<p>Added: Mon Nov  7 17:15:59 CET 2016<br/>
+Created: N/A</p>
+
 </body>
 </html>
