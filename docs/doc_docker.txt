@@ -2681,3 +2681,801 @@ https://docs.docker.com/userguide/dockerlinks/
 
 If you wanted to manage a group of containers, such as an app container, a database container, and this Nginx container, take a look at Docker Compose.
 https://docs.docker.com/compose/
+
+
+
+Title: how-to-install-and-use-docker-compose-on-ubuntu-14-04
+===
+Source: https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-compose-on-ubuntu-14-04
+
+Added: Thu Nov 10 12:16:34 CET 2016
+Created: PostedNovember 19, 2015
+
+
+Introduction
++++
+
+Docker is a great tool, but to really take full advantage of its potential it's best if each component of your application runs in its own container. For complex applications with a lot of components, orchestrating all the containers to start up and shut down together (not to mention talk to each other) can quickly become unwieldy. 
+
+The Docker community came up with a popular solution called Fig, which allowed you to use a single YAML file to orchestrate all your Docker containers and configurations. This became so popular that the Docker team eventually decided to make their own version based on the Fig source. They called it Docker Compose. In short, it makes dealing with the orchestration processes of Docker containers (such as starting up, shutting down, and setting up intra-container linking and volumes) really easy.
+
+By the end of this article, you will have Docker and Docker Compose installed and have a basic understanding of how Docker Compose works.
+
+
+Docker and Docker Compose Concepts
++++
+
+Using Docker Compose requires a combination of a bunch of different Docker concepts in one, so before we get started let's take a minute to review the various concepts involved. If you're already familiar with Docker concepts like volumes, links, and port forwarding then you might want to go ahead and skip on to the next section.
+
+Docker Images
+---
+
+Each Docker container is a local instance of a Docker image. You can think of a Docker image as a complete Linux installation. Usually a minimal installation contains only the bare minimum of packages needed to run the image. These images use the kernel of the host system, but since they are running inside a Docker container and only see their own file system, it's perfectly possible to run a distribution like CentOS on an Ubuntu host (or vice-versa).
+
+Most Docker images are distributed via the Docker Hub, which is maintained by the Docker team. Most popular open source projects have a corresponding image uploaded to the Docker Registry, which you can use to deploy the software. When possible it's best to grab "official" images, since they are guaranteed by the Docker team to follow Docker best practices.
+
+
+Communication Between Docker Images
+---
+
+Docker containers are isolated from the host machine by default, meaning that by default the host machine has no access to the file system inside the Docker container, nor any means of communicating with it via the network. Needless to say, this makes configuring and working with the image running inside a Docker container difficult by default.
+
+Docker has three primary ways to work around this. The first and most common is to have Docker specify environment variables that will be set inside the Docker container. The code running inside the Docker container will then check the values of these environment variables on startup and use them to configure itself properly. 
+
+
+Another commonly used method is a Docker data volume.
+https://www.digitalocean.com/community/tutorials/how-to-work-with-docker-data-volumes-on-ubuntu-14-04
+
+Docker volumes come in two flavors — internal and shared. Docker containers run ephemerally by default, which means that every time the container is shut down or restarted it doesn't save its data — it essentially reverts to the state it was in when the container started. This is good for testing and development since you're guaranteed to be working with the same environment on each run of your Docker container but not so good if you were hoping the blog posts you happily typed into your WordPress install would still be there next time you restart Docker. (Luckily the creators of the official Docker WordPress and MariaDB images have taken care of this issue for us. More on that in the Deploying Wordpress and PHPMyAdmin with Docker Compose on Ubuntu 14.04 article.)
+https://www.digitalocean.com/community/tutorials/how-to-install-wordpress-and-phpmyadmin-with-docker-compose-on-ubuntu-14-04
+
+Specifying an internal volume just means that for a folder you specify for a particular Docker container, the data will be persisted between restarts. For example if you wanted to make sure your log files hung around between each restart you might specify an internal /var/log volume.
+
+A shared volume maps a folder inside a Docker container onto a folder on the host machine. This allows you to easily share files between the Docker container and the host machine, which we'll explore in the Docker data volume article.
+https://www.digitalocean.com/community/tutorials/how-to-work-with-docker-data-volumes-on-ubuntu-14-04
+
+The third way to communicate with a Docker container is via the network. Docker allows communication between different Docker containers via links, as well as port forwarding, allowing you to forward ports from inside the Docker container to ports on the host server. For example, you can create a link to allow your WordPress and MariaDB Docker containers to talk to each other and port-forwarding to expose WordPress to the outside world so that users can connect to it. 
+
+
+Installing Docker Compose
++++
+
+Now that you have Docker installed, let's go ahead and install Docker Compose. 
+
+From Github
+---
+
+MY NOTE:
+https://docs.docker.com/compose/install/
+
+Compose can be installed from pypi using pip. If you install using pip it is highly recommended that you use a virtualenv because many operating systems have python system packages that conflict with docker-compose dependencies. See the virtualenv tutorial to get started.
+
+Based on that seems that the variant of instalation from Github (described below) is the preferred one.
+
+$ curl -L "https://github.com/docker/compose/releases/download/1.8.1/docker-compose-$(uname -s)-$(uname -m)" > /usr/local/bin/docker-compose
+~~~
+
+$ chmod +x /usr/local/bin/docker-compose
+~~~
+
+Test the installation.
+
+$ docker-compose --version
+~~~
+
+docker-compose version: 1.8.1
+
+
+Alternate method via python-pip
+---
+
+First, install python-pip as prerequisite:
+
+
+$ sudo apt-get -y install python-pip
+~~~
+
+Then you can install Docker Compose:
+
+$ sudo pip install docker-compose
+~~~
+
+
+Running a Container with Docker Compose
++++
+
+The public Docker registry, Docker Hub, includes a simple Hello World image. Now that we have Docker Compose installed, let's test it with this really simple example.
+
+First, create a directory for our YAML file:
+
+
+        #
+        $ mkdir hello-world
+
+Then change into the directory:
+
+
+        #
+        $ cd hello-world
+
+Now create the YAML file using your favorite text editor (we will use nano):
+
+
+        #
+        $ nano docker-compose.yml
+
+Put the following contents into the file, save the file, and exit the text editor:
+
+
+        my-test:
+          image: hello-world
+
+
+The output should start with the following:
+
+        
+        $ docker-compose up
+        Creating helloworld_my-test_1
+        Attaching to helloworld_my-test_1
+        my-test_1  | 
+        my-test_1  | Hello from Docker!
+        my-test_1  | This message shows that your installation appears to be working correctly.
+        my-test_1  | 
+        my-test_1  | To generate this message, Docker took the following steps:
+        my-test_1  |  1. The Docker client contacted the Docker daemon.
+        my-test_1  |  2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+        my-test_1  |  3. The Docker daemon created a new container from that image which runs the
+        my-test_1  |     executable that produces the output you are currently reading.
+        my-test_1  |  4. The Docker daemon streamed that output to the Docker client, which sent it
+        my-test_1  |     to your terminal.
+        my-test_1  | 
+        my-test_1  | To try something more ambitious, you can run an Ubuntu container with:
+        my-test_1  |  $ docker run -it ubuntu bash
+        my-test_1  | 
+        my-test_1  | Share images, automate workflows, and more with a free Docker Hub account:
+        my-test_1  |  https://hub.docker.com
+        my-test_1  | 
+        my-test_1  | For more examples and ideas, visit:
+        my-test_1  |  https://docs.docker.com/engine/userguide/
+        my-test_1  | 
+        helloworld_my-test_1 exited with code 0
+
+
+This simple test does not show one of the main benefits of Docker Compose — being able to bring a group of Docker containers up and down all at the same time. The How To Install Wordpress and PhpMyAdmin with Docker Compose on Ubuntu 14.04 articles show how to use Docker Compose to run three containers as one application group.
+https://www.digitalocean.com/community/tutorials/how-to-install-wordpress-and-phpmyadmin-with-docker-compose-on-ubuntu-14-04
+
+
+Learning Docker Compose Commands
++++
+
+Let's go over the commands the docker-compose tool supports.
+
+The docker-compose command works on a per-directory basis. You can have multiple groups of Docker containers running on one machine — just make one directory for each container and one docker-compose.yml file for each container inside its directory.
+
+So far we've been running docker-compose up on our own and using CTRL-C to shut it down. This allows debug messages to be displayed in the terminal window. This isn't ideal though, when running in production you'll want to have docker-compose act more like a service. One simple way to do this is to just add the -d option when you up your session:
+
+
+$ docker-compose up -d
+---
+
+docker-compose will now fork to the background.
+
+To show your group of Docker containers (both stopped and currently running), use the following command:
+
+$ docker-compose ps
+---
+
+
+For example, the following shows that the helloworld_my-test_1 container is stopped:
+
+
+		Output of `docker-compose ps`
+				Name           Command   State    Ports 
+		-----------------------------------------------
+		helloworld_my-test_1   /hello    Exit 0         
+
+
+A running container will show the Up state:
+
+		Output of `docker-compose ps`
+			 Name              Command          State        Ports      
+		---------------------------------------------------------------
+		nginx_nginx_1   nginx -g daemon off;   Up      443/tcp, 80/tcp 
+
+
+To stop all running Docker containers for an application group, issue the following command in the same directory as the docker-compose.yml file used to start the Docker group:
+
+$ docker-compose stop
+---
+
+
+Note: docker-compose kill is also available if you need to shut things down more forcefully.
+
+In some cases, Docker containers will store their old information in an internal volume. If you want to start from scratch you can use the rm command to fully delete all the containers that make up your container group:
+
+
+$ docker-compose rm 
+---
+
+If you try any of these commands from a directory other than the directory that contains a Docker container and .yml file, it will complain and not show you your containers:
+
+
+		Output from wrong directory
+		Can't find a suitable configuration file in this directory or any parent. Are you in the right directory?
+		Supported filenames: docker-compose.yml, docker-compose.yaml, fig.yml, fig.yaml
+
+
+Accessing the Docker Container Filesystem (Optional)
++++
+
+If you need to work on the command prompt inside a container, you can use the docker exec command.
+
+The Hello World! example exits after it is run, so we need to start a container that will keep running so we can then use docker exec to access the filesystem for the container. Let's take a look at the Nginx image from Docker Hub.
+
+Create a new directory for it and change into it:
+
+
+		#
+		$ mkdir ~/nginx && cd $_
+
+Create a docker-compose.yml file in our new directory:
+
+
+		#
+		$ nano docker-compose.yml
+
+and paste in the following:
+
+
+		nginx:
+		  image: nginx
+
+
+Save the file and exit. We just need to start the Nginx container as a background process with the following command:
+
+$ docker-compose up -d
+---
+
+The Nginx image will be downloaded and then the container will be started in the background.
+
+Now we need the CONTAINER ID for the container. List of all the containers that are running:
+
+$ docker ps
+---
+
+You will see something similar to the following:
+
+		Output of `docker ps`
+		CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS               NAMES
+		e90e12f70418        nginx               "nginx -g 'daemon off"   6 minutes ago       Up 5 minutes        80/tcp, 443/tcp     nginx_nginx_1
+
+
+Note: Only running containers are listed with the docker ps command.
+
+
+If we wanted to make a change to the filesystem inside this container, we'd take its ID (in this example e90e12f70418) and use docker exec to start a shell inside the container:
+
+
+$ docker exec -it e90e12f70418 /bin/bash
+---
+
+The -t option opens up a terminal, and the -i option makes it interactive. The /bin/bash options opens a bash shell to the running container. Be sure to use the ID for your container.
+
+You will see a bash prompt for the container similar to:
+
+
+		#
+		root@e90e12f70418:/#
+
+From here, you can work from the command prompt. Keep in mind, however, that unless you are in a directory that is saved as part of a data volume, your changes will disappear as soon as the container is restarted. Another caveat is that most Docker images are created with very minimal Linux installs, so some of the command line utilities and tools you are used to may not be present. 
+
+
+Conclusion
+
+Great, so that covers the basic concepts of Docker Compose and how to get it installed and running. Check out the Deploying Wordpress and PHPMyAdmin with Docker Compose on Ubuntu 14.04 tutorial for a more complicated example of how to deploy an application with Docker Compose.
+https://www.digitalocean.com/community/tutorials/how-to-install-wordpress-and-phpmyadmin-with-docker-compose-on-ubuntu-14-04
+
+
+For a complete list of configuration options for the docker-compose.yml file refer to the Compose file reference.
+https://docs.docker.com/compose/compose-file/
+
+
+
+
+Title: how-to-work-with-docker-data-volumes-on-ubuntu-14-04
+===
+Source: https://www.digitalocean.com/community/tutorials/how-to-work-with-docker-data-volumes-on-ubuntu-14-04
+
+Added: Thu Nov 10 13:45:45 CET 2016
+Created: PostedNovember 19, 2015
+
+
+
+Introduction
++++
+
+In this article we're going to run through the concept of Docker data volumes: what they are, why they're useful, the different types of volumes, how to use them, and when to use each one. We'll also go through some examples of how to use Docker volumes via the docker command line tool.
+
+By the time we reach the end of the article, you should be comfortable creating and using any kind of Docker data volume.
+
+
+Explaining Docker Containers
++++
+
+Working with Docker requires understanding quite a few Docker-specific concepts, and most of the documentation focuses on explaining how to use Docker's toolset without much explanation of why you'd want to use any of those tools. This can be confusing if you're new to Docker, so we'll start by going through some basics and then jump into working with Docker containers. Feel free to skip ahead to the next section if you've worked with Docker before and just want to know how to get started with data volumes.
+
+A Docker container is similar to a virtual machine. It basically allows you to run a pre-packaged "Linux box" inside a container. The main difference between a Docker container and a typical virtual machine is that Docker is not quite as isolated from the surrounding environment as a normal virtual machine would be. A Docker container shares the Linux kernel with the host operating system, which means it doesn't need to "boot" the way a virtual machine would.
+
+Since so much is shared, firing up a Docker container is a quick and cheap operation — in most cases you can bring up a full Docker container (the equivalent of a normal virtual machine) in the same time as it would take to run a normal command line program. This is great because it makes deploying complex systems a much easier and more modular process, but it's a different paradigm from the usual virtual machine approach and has some unexpected side effects for people coming from the virtualization world. 
+
+
+Understanding Docker Data Volumes
++++
+
+The biggest point of confusion is that Docker filesystems are temporary by default. If you start up a Docker image you'll end up with a container that on the surface behaves much like a virtual machine. You can create, modify, and delete files to your heart's content. But if you stop the container and start it up again (MY NOTE: I think he was referring here to creating a new container from the image.), all your changes will be lost: any files you previously deleted will now be back, and any new files or edits you made won't be present. This is because Docker images are more like templates than like images in the standard virtualization world. 
+
+Docker images are the files that make up an application. For example, if you download the Docker Nginx image from the Docker Hub (the public Docker Registry), you'll be downloading an image that contains a minimal Linux distribution and the binaries that Nginx itself needs to run. A container is like another layer that sits on top of this image without ever modifying the original image itself. If you're familiar with the concept of snapshots in VirtualBox or other virtualization tools, this works similarly. To save your changes you actually have to create a new Docker image (not container) that includes your newly changed files.
+
+That's fine if you're interested in creating new Docker images, but what if you just want to do something like use the public Nginx Docker image to serve your own webpage? Having to copy your webpages into place every single time you start your Docker container is far from ideal. This is where data volumes come in. Docker data volumes provide you with a separate place to store other data. You can tell Docker to use any folder as a container, and from then on any files written to that location will be persisted. 
+
+
+Working Without Docker Data Volumes
++++
+
+We mentioned earlier that files in Docker containers are temporary. This is a weird concept, so let's take a second to see the problem in action. If you've already seen files unexpectedly disappear from your Docker containers and just want to know how to fix it then go ahead and skip on to the next section.
+
+Let's run a basic ubuntu image and watch how files we create disappear when the container is killed.
+
+$ docker run -t -i ubuntu /bin/bash
+---
+
+
+This command does a bunch of things in one go. The run portion with the -t -i options tells Docker to prepare to run an image in interactive mode with a terminal. The ubuntu command line option is the name of the image to run, and the /bin/bash is the name of the executable inside that image that we want to start. Docker will automatically attempt to download images that it can't find locally from the public Docker Registry, so running this command will result in Docker downloading an Ubuntu image from the Docker Registry and then launching bash inside it, which gives us a standard shell.
+
+The prompt will change to something similar to:
+
+
+		Ubuntu container bash shell
+		root@cbceb444ec6a:/#
+
+
+Let's go ahead and write a file to the root of the filesystem inside the Docker container:
+
+
+		#
+		$ echo "I'm going to disappear" > /byebye
+
+You can see that the file /byebye was created and its contents are present via the usual shell commands. For example, inside the bash shell for your Ubuntu container, if you list the contents of the / directory with the command:
+
+
+		#
+    	$ ls /
+
+You will see the following:
+
+
+		Output of ls /
+		bin  boot  byebye  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+
+
+If you issue the command:
+
+		#
+		$ cat /byebye
+
+You will see the following:
+
+
+		Output of `cat /byebye`
+		I'm going to disappear
+
+Go ahead and type exit at the shell now, and you'll be dropped back to your host system's shell.
+
+Now, scroll back up and repeat the steps in this section again, except don't create the file /byebye again. You will see that it no longer exists. For example, the command:
+
+
+		#
+		$ cat /byebye
+
+now shows the following:
+
+
+		Output of cat /byebye
+		cat: /byebye: No such file or directory
+
+MY NOTE: The file does not exist, because you are in a different container, if you start the initially created container, the file would still be there, afaik.
+
+Be sure to exit from the Ubuntu container bash shell:
+
+
+		$ exit
+
+
+Learning the Types of Docker Data Volumes
++++
+
+There are three main use cases for Docker data volumes:
+
+   - To keep data around, even through container restarts
+   - To share data between the host filesystem and the Docker container
+   - To share data with other Docker containers
+
+The third case is a little more advanced, so we won't go into it in this tutorial, but the first two are quite common.
+
+In the first (and simplest) case you just want the data to hang around even if you shut down or restart the container, so it's often easiest to let Docker manage where the data gets stored. 
+
+
+Keeping Data Persistent
++++
+
+There's no way to directly create a "data volume" in Docker, so instead we create a data volume container with a volume attached to it. For any other containers that you then want to connect to this data volume container, use the Docker's --volumes-from option to grab the volume from this container and apply them to the current container. This is a bit unusual at first glance, so let's run through a quick example of how we could use this approach to make our byebye file stick around even if the container is restarted.
+
+First, create a new data volume container to store our volume:
+
+$ docker create -v /tmp --name datacontainer ubuntu
+---
+
+
+This created a container named datacontainer based off of the ubuntu image and in the directory /tmp.
+
+Now, if we run a new Ubuntu container with the --volumes-from flag and run bash again as we did earlier, anything we write to the /tmp directory will get saved to the /tmp volume of our datacontainer container.
+
+First, start the ubuntu image:
+
+$ docker run -t -i --volumes-from datacontainer ubuntu /bin/bash
+---
+
+The -t command line options calls a terminal from inside the container. The -i flag makes the connection interactive.
+
+At the bash prompt for the ubuntu container, create a file in /tmp:
+
+
+		#
+		$ echo "I'm not going anywhere" > /tmp/hi
+
+
+Go ahead and type exit to return to your host machine's shell. Now, run the same command again:
+
+
+$ docker run -t -i --volumes-from datacontainer ubuntu /bin/bash
+---
+
+This time the hi file is already there:
+
+
+		#
+		$ cat /tmp/hi
+
+You should see:
+
+
+		Output of cat /tmp/hi
+		I'm not going anywhere
+
+
+You can add as many --volumes-from flags as you'd like (for example, if you wanted to assemble a container that uses data from multiple data containers). You can also create as many data volume containers as you'd like.
+
+The only caveat to this approach is that you can only choose the mount path inside the container (/tmp in our example) when you create the data volume container. 
+
+
+MY NOTE: 
+The author of this article is providing misleading info, as in his scenario, he always creates a new container, so it's expected that the file created in a different previously created container, doesn't exist in a new container, since a new container is just a fresh instance of the base image, and doesn't have anything else in it, it's like a new born. Basically what his example is showing, is that he created a separate container "datacontainer", and is writing to this container, so data in that container is persisting, which is totally opposite to what the author is saying, since he is saying that data in a container doesn't persist, which is not correct since the data in a container does persist. This was also addressed in the comments section.
+
+
+Comments
+---
+
+December 14, 2015
+
+
+		Hi~ Thank you for your sharing!
+		I'm new to Docker, but I think that there is something different from what I know about how the modifications to the container will be dealt with. I noticed that you use "docker run" during the whole process with out an argument "--name <name>", thus, Docker will create a new container every time, whose name is a random one generated by the docker itself, eg: if you run
+
+		docker run -d busybox && docker ps -a
+
+		there comes a container whose name is "sleepyliskov" on my machine, you run it again, another container called "ferventlalande" is created, they exit at once cause the busybox dose nothing. So, my point is, in your scenario, when you created the file "byebye" in a container without a name given by you, you stop it, and you "docker run" again, the new container is a new one which is definitely not the one with the "byebye" file. But if you use
+
+		docker ps -a
+
+		you'll find the container(let's call it foo_bar) with the "byebye" file, it's not gone, just stopped. you can use
+
+		docker start foo_bar
+
+		to restart it.
+		So, when you say stop the container and start it up again, I would think that you mean "docker start " and "docker stop" not "docker run", the container will be always there with any of your modification until you remove them with
+
+		docker rm <name>
+
+		So, I guess maybe you try to find the "byebye " file in the wrong place, and it may be a good practice to use the "--name" argument or use the "--rm". 
+
+
+
+April 15, 2016
+
+		
+		#
+		You are correct, author of the article created a completely new container instead of looking for the file in the existing cotainer
+
+
+June 17, 2016
+
+		
+
+		Is this still up to date? I think the changes are now persisted in the top RW layer, even if no data volume is mounted. Right?
+		I tried creating a file an restarting the container. The file was still there...
+
+
+
+
+
+Sharing Data Between the Host and the Docker Container
++++
+
+The other common use for Docker containers is as a means of sharing files between the host machine and the Docker container. This works differently from the last example. There's no need to create a "data-only" container first. You can simply run a container of any Docker image and override one of its directories with the contents of a directory on the host system.
+
+
+As a quick real-world example, let's say you wanted to use the official Docker Nginx image but you wanted to keep a permanent copy of the Nginx's log files to analyze later. By default the nginx Docker image logs to the /var/log/nginx directory, but this is /var/log/nginx inside the Docker Nginx container. Normally it's not reachable from the host filesystem. 
+
+
+Let's create a folder to store our logs and then run a copy of the Nginx image with a shared volume so that Nginx writes its logs to our host's filesystem instead of to the /var/log/nginx inside the container:
+
+
+		#
+		$ mkdir ~/nginxlogs
+
+
+Then start the container: 
+
+
+$ docker run -d -v ~/nginxlogs:/var/log/nginx -p 5000:80 -i nginx
+---
+
+
+This run command is a little different from the ones we've used so far, so let's break it down piece by piece:
+
+
+
+
+	- -v ~/nginxlogs:/var/log/nginx  We set up a volume that links the /var/log/nginx directory from inside the Nginx container to the ~/nginxlogs directory on the host machine. Docker uses a : to split the host's path from the container path, and the host path always comes first.
+
+	- -d  Detach the process and run in the background. Otherwise, we would just be watching an empty Nginx prompt and wouldn't be able to use this terminal until we killed Nginx.
+
+	- -p 5000:80  Setup a port forward. The Nginx container is listening on port 80 by default, and this maps the Nginx container's port 80 to port 5000 on the host system.
+
+
+If you were paying close attention, you may have also noticed one other difference from the previous run commands. Up until now we've been specifying a command at the end of all our run statements (usually /bin/bash) to tell Docker what command to run inside the container. Because the Nginx image is an official Docker image, it follows Docker best practices, and the creator of the image set the image to run the command to start Nginx automagically. We can just drop the usual /bin/bash here and let the creators of the image choose what command to run in the container for us.
+
+So, we now have a copy of Nginx running inside a Docker container on our machine, and our host machine's port 5000 maps directly to that copy of Nginx's port 80. Let's use curl to do a quick test request:
+
+
+		#
+		$ curl localhost:5000
+
+You'll get a screenful of HTML back from Nginx showing that Nginx is up and running. But more interestingly, if you look in the ~/nginxlogs folder on the host machine and take a look at the access.log file you'll see a log message from Nginx showing our request:
+
+
+		#
+		$ cat ~/nginxlogs/access.log
+
+
+You will see something similar to:
+
+
+		Output of `cat ~/nginxlogs/access.log`
+		172.17.42.1 - - [23/Oct/2015:05:22:51 +0000] "GET / HTTP/1.1" 200 612 "-" "curl/7.35.0" "-"
+
+
+If you make any changes to the ~/nginxlogs folder, you'll be able to see them from inside the Docker container in real-time as well. 
+
+
+Conclusion
+
+That about sums it up! We've now covered how to create data volume containers whose volumes we can use as a way to persist data in other containers as well as how to share folders between the host filesystem and a Docker container. This covers all but the most advanced use cases when it comes to Docker data volumes.
+
+If you are using Docker Compose, Docker data volumes can be configured in your docker-compose.yml file. Check out How To Install and Use Docker Compose on Ubuntu 14.04 for details.
+
+
+
+
+Title: how-to-install-wordpress-and-phpmyadmin-with-docker-compose-on-ubuntu-14-04
+===
+Source: https://www.digitalocean.com/community/tutorials/how-to-install-wordpress-and-phpmyadmin-with-docker-compose-on-ubuntu-14-04
+
+Added: 
+Thu Nov 10 16:20:04 CET 2016
+Created: PostedNovember 19, 2015
+
+
+
+Introduction
++++
+
+Docker Compose makes dealing with the orchestration processes of Docker containers (such as starting up, shutting down, and setting up intra-container linking and volumes) really easy.
+
+This article provides a real-world example of using Docker Compose to install an application, in this case WordPress with PHPMyAdmin as an extra. WordPress normally runs on a LAMP stack, which means Linux, Apache, MySQL/MariaDB, and PHP. The official WordPress Docker image includes Apache and PHP for us, so the only part we have to worry about is MariaDB.
+
+
+Installing WordPress
++++
+
+We'll be using the official WordPress and MariaDB Docker images. If you're curious, there's lots more info about these images and their configuration options on their respective GitHub and Docker Hub pages.
+https://hub.docker.com/_/wordpress/
+https://hub.docker.com/_/mariadb/
+
+Let's start by making a folder where our data will live and creating a minimal docker-compose.yml file to run our WordPress container:
+
+
+		#
+		mkdir ~/wordpress && cd $_
+
+Then create a ~/wordpress/docker-compose.yml with your favorite text editor (nano is easy if you don't have a preference):
+
+
+		#
+		nano ~/wordpress/docker-compose.yml
+
+and paste in the following:
+ 
+
+		wordpress:
+		  image: wordpress
+
+
+This just tells Docker Compose to start a new container called wordpress and download the wordpress image from the Docker Hub.
+
+We can bring the image up like so:
+
+
+$ docker-compose up
+---
+
+
+You'll see Docker download and extract the WordPress image from the Docker Hub, and after some time you'll get some error messages similar to the below:
+
+
+		$ docker-compose up
+		Pulling wordpress (wordpress:latest)...
+		latest: Pulling from library/wordpress
+		386a066cd84a: Pull complete
+		269e95c6053a: Pull complete
+		6243d5c57a34: Pull complete
+		872f6d38a33b: Pull complete
+		e5ea5361568c: Pull complete
+		f81f18e77719: Pull complete
+		f9dbc878ca0c: Pull complete
+		195935e4100b: Pull complete
+		c047d6392f67: Pull complete
+		6d5afcbf41ee: Pull complete
+		bbe672c318f3: Pull complete
+		c015a3b2e201: Pull complete
+		6eb6d78a72af: Pull complete
+		ff76b754471b: Pull complete
+		a95632e24e80: Pull complete
+		863f9b4c6b73: Pull complete
+		8b02b7760190: Pull complete
+		58725be21a3b: Pull complete
+		8e7c95e1471c: Pull complete
+		Digest: sha256:f5e8cafe19d2ff082445960169ceaf7eac01a0669927f963896d6572c15bd607
+		Status: Downloaded newer image for wordpress:latest
+		Creating wordpress_wordpress_1
+		Attaching to wordpress_wordpress_1
+		wordpress_1  | error: missing required WORDPRESS_DB_PASSWORD environment variable
+		wordpress_1  |   Did you forget to -e WORDPRESS_DB_PASSWORD=... ?
+		wordpress_1  | 
+		wordpress_1  |   (Also of interest might be WORDPRESS_DB_USER and WORDPRESS_DB_NAME.)
+		wordpress_wordpress_1 exited with code 1
+
+This is WordPress complaining that it can't find a database. Let's add a MariaDB image to the mix and link it up to fix that.
+
+
+Installing MariaDB
++++
+
+To add the MariaDB image to the group, re-open docker-compose.yml with your text editor:
+
+
+		#
+		$ nano ~/wordpress/docker-compose.yml
+
+Change docker-compose.yml to match the below (be careful with the indentation, YAML files are white-space sensitive)
+docker-compose.yml
+
+
+		wordpress:
+		  image: wordpress
+		  links:
+			- wordpress_db:mysql
+		wordpress_db:
+		  image: mariadb
+
+
+
+What we've done here is define a new container called wordpress_db and told it to use the mariadb image from the Docker Hub. We also told the our wordpress container to link our wordpress_db container into the wordpress container and call it mysql (inside the wordpress container the hostname mysql will be forwarded to our wordpress_db container).
+
+If you run docker-compose up again, you will see it download the MariaDB image, and you'll also see that we're not quite there yet though:
+
+
+		Output
+		wordpress_db_1 | error: database is uninitialized and MYSQL_ROOT_PASSWORD not set
+		wordpress_db_1 |   Did you forget to add -e MYSQL_ROOT_PASSWORD=... ?
+		wordpress_1    | error: missing required WORDPRESS_DB_PASSWORD environment variable
+		wordpress_1    |   Did you forget to -e WORDPRESS_DB_PASSWORD=... ?
+		wordpress_1    | 
+		wordpress_1    |   (Also of interest might be WORDPRESS_DB_USER and WORDPRESS_DB_NAME.)
+		wordpress_wordpress_db_1 exited with code 1
+		wordpress_wordpress_1 exited with code 1
+		Gracefully stopping... (press Ctrl+C again to force)
+
+
+WordPress is still complaining about being unable to find a database, and now we have a new complaint from MariaDB saying that no root password is set.
+
+It appears that just linking the two containers isn't quite enough. Let's go ahead and set the MYSQL_ROOT_PASSWORD variable so that we can actually fire this thing up.
+
+Edit the Docker Compose file yet again:
+
+
+		#
+		$ nano ~/wordpress/docker-compose.yml
+
+Add these two lines to the end of the wordpress_db section, but make sure to change examplepass to a more secure password!
+
+
+		#
+		wordpress_db:
+		...
+		  environment:
+			MYSQL_ROOT_PASSWORD: examplepass
+		...
+
+
+This will set an environment variable inside the wordpress_db container called MYSQL_ROOT_PASSWORD with your desired password. The MariaDB Docker image is configured to check for this environment variable when it starts up and will take care of setting up the DB with a root account with the password defined as MYSQL_ROOT_PASSWORD.
+
+While we're at it, let's also set up a port forward so that we can connect to our WordPress install once it actually loads up. Under the wordpress section add these two lines:
+docker-compose.yml
+
+
+		#
+		wordpress:
+		...
+		  ports:
+			- 8080:80
+		...
+
+
+
+The first port number is the port number on the host, and the second port number is the port inside the container. So, this configuration forwards requests on port 8080 of the host to the default web server port 80 inside the container.
+
+Note: If you would like Wordpress to run on the default web server port 80 on the host, change the previous line to 80:80 so that requests to port 80 on the host are forwarded to port 80 inside the Wordpress container.
+
+
+Your complete docker-compose.yml file should now look like this:
+
+
+		#
+		wordpress:
+		  image: wordpress
+		  links:
+			- wordpress_db:mysql
+		  ports:
+			- 8080:80
+		wordpress_db:
+		  image: mariadb
+		  environment:
+			MYSQL_ROOT_PASSWORD: examplepass
+
+
+With this configuration we can actually go ahead and fire up WordPress. This time, let's run it with the -d option, which will tell docker-compose to run the containers in the background so that you can keep using your terminal:
+
+
+$ docker-compose up -d
+---
+
+You'll see a whole bunch of text fly by your screen. Once it's calmed down, open up a web browser and browse to the IP
+of your DigitalOcean box on port 8080 (for example, if the IP address of your server is 123.456.789.123 you should type http://123.456.789.123:8080 into your browser.)
+
+You should see a fresh WordPress installation page and be able to complete the install and blog as usual.
+
+Because these are both official Docker images and are following all of Docker's best practices, each of these images have pre-defined, persistent volumes for you — meaning that if you restart the container, your blog posts will still be there. You can learn more about working with Docker volumes in the Docker data volumes tutorial.
+
+
+
