@@ -3478,4 +3478,806 @@ You should see a fresh WordPress installation page and be able to complete the i
 Because these are both official Docker images and are following all of Docker's best practices, each of these images have pre-defined, persistent volumes for you — meaning that if you restart the container, your blog posts will still be there. You can learn more about working with Docker volumes in the Docker data volumes tutorial.
 
 
+Adding a PhpMyAdmin Container
++++
+
+Great, that was relatively painless. Let's try getting a little fancy.
+
+So far we've only been using official images, which the Docker team takes great pains to ensure are accurate. You may have noticed that we didn't have to give the WordPress container any environment variables to configure it. As soon as we linked it up to a properly configured MariaDB container everything just worked.
+
+This is because there's a script inside the WordPress Docker container that actually grabs the MYSQL_ROOT_PASSWORD variable from our wordpress_db container and uses that to connect to WordPress. 
+
+Let's venture out of the official image area a little bit and use a community contributed PhpMyAdmin image. Go ahead and edit docker-compose.yml one more time:
+
+
+        #
+        $ nano docker-compose.yml
+
+Paste the following at the end of the file:
+
+
+		#
+		phpmyadmin:
+		  image: corbinu/docker-phpmyadmin
+		  links:
+			- wordpress_db:mysql
+		  ports:
+			- 8181:80
+		  environment:
+			MYSQL_USERNAME: root
+			MYSQL_ROOT_PASSWORD: examplepass
+
+
+
+Be sure to replace examplepass with the exact same root password from the wordpress_db container you setup earlier.
+
+
+This grabs docker-phpmyadmin by community member corbinu, links it to our wordpress_db container with the name mysql (meaning from inside the phpmyadmin container references to the hostname mysql will be forwarded to our wordpress_db container), exposes its port 80 on port 8181 of the host system, and finally sets a couple of environment variables with our MariaDB username and password. This image does not automatically grab the MYSQL_ROOT_PASSWORD environment variable from the wordpress_db container's environment the way the wordpress image does. We actually have to copy the MYSQL_ROOT_PASSWORD: examplepass line from the wordpress_db container, and set the username to root.
+
+The complete docker-compose.yml file should now look like this:
+
+
+		#
+		wordpress:
+		  image: wordpress
+		  links:
+			- wordpress_db:mysql
+		  ports:
+			- 8080:80
+		wordpress_db:
+		  image: mariadb
+		  environment:
+			MYSQL_ROOT_PASSWORD: examplepass
+		phpmyadmin:
+		  image: corbinu/docker-phpmyadmin
+		  links:
+			- wordpress_db:mysql
+		  ports:
+			- 8181:80
+		  environment:
+			MYSQL_USERNAME: root
+			MYSQL_ROOT_PASSWORD: examplepass
+
+
+
+Now start up the application group again:
+
+$ docker-compose up -d
+---
+
+You will see PhpMyAdmin being installed. Once it is finished, visit your server's IP address again (this time using port 8181, e.g. http://123.456.789.123:8181). You'll be greeted by the PhpMyAdmin login screen.
+
+Go ahead and login using username root and password you set in the YAML file, and you'll be able to browse your database. You'll notice that the server includes a wordpress database, which contains all the data from your WordPress install.
+
+You can add as many containers as you like this way and link them all up in any way you please. As you can see, the approach is quite powerful —instead of dealing with the configuration and prerequisites for each individual components and setting them all up on the same server, you get to plug the pieces together like Lego blocks and add components piecemeal. Using tools like Docker Swarm you can even transparently run these containers over multiple servers! That's a bitoutside the scope of this tutorial though. Docker provides some [documentation]((https://docs.docker.com/swarm/install-w-machine/)) on it if you are interested. 
+
+
+
+Creating the WordPress Site
++++
+
+Since all the files for your new WordPress site are stored inside your Docker container, what happens to your files when you stop the container and start it again?
+
+By default, the document root for the WordPress container is persistent. This is because the WordPress image from the Docker Hub is configured this way. If you make a change to your WordPress site, stop the application group, and start it again, your website will still have the changes you made.
+
+Let's try it.
+
+Go to your WordPress from a web browser (e.g. http://123.456.789.123:8080). Edit the Hello World! post that already exists. Then, stop all the Docker containers with the following command:
+
+$ docker-compose stop
+---
+
+Try loading the WordPress site again. You will see that the website is down. Start the Docker containers again:
+
+$ docker-compose up -d
+---
+
+Again, load the WordPress site. You should see your blog site and the change you made earlier. This shows that the changes you make are saved even when the containers are stopped.
+
+
+Storing the Document Root on the Host Filesystem (Optional)
++++
+
+t is possible to store the document root for WordPress on the host filesystem using a Docker data volume to share files between the host and the container.
+
+Note: For more details on working with Docker data volumes, take a look at the Docker data volumes tutorial.
+
+Let's give it a try. Open up your docker-compose.yml file one more time:
+
+
+		#
+		$ nano ~/wordpress/docker-compose.yml
+
+
+in the wordpress: section add the following lines:
+
+
+		#
+		wordpress:
+		...
+		  volumes:
+			- ~/wordpress/wp_html:/var/www/html
+			...
+
+
+Stop your currently running docker-compose session:
+
+$ docker-compose stop
+---
+
+Remove the existing container so we can map the volume to the host filesystem:
+
+$ docker-compose rm wordpress
+---
+
+Start WordPress again:
+
+$ docker-compose up -d
+---
+
+
+Once the prompt returns, WordPress should be up and running again — this time using the host filesystem to store the document root.
+
+If you look in your ~/wordpress directory, you'll see that there is now a wp_html directory in it:
+
+
+		#
+		$ ls ~/wordpress
+
+All of the WordPress source files are inside it. Changes you make will be picked up by the WordPress container in real time.
+
+This experience was a little smoother than it normally would be — the WordPress Docker container is configured to check if /var/www/html is empty or not when it starts and copies files there appropriately. Usually you will have to do this step yourself.
+
+
+Conclusion
+
+You should have a full WordPress deploy up and running. You should be able to use the same method to deploy quite a wide variety of systems using the images available on the Docker Hub. Be sure to figure out which volumes are persistent and which are not for each container you create.
+
+
+Comments
++++
+
+December 3, 2015
+
+
+
+For the mariadb/mysql section I wanted to preserve the database files, so the following volume pattern for the wordpress_db section worked for me:
+
+
+		#
+		wordpress_db:
+		  ......
+		 volumes:
+			- /somehostpath/dbsubdirname:/var/lib/mysql
+		........
+
+
+This maps the host directory /somehostpath/dbsubdirname to the standard location within the container for mariadb/mysql database directory. The phpMyAdmin worked as expected.
+
+
+
+Title: how-to-install-prometheus-using-docker-on-ubuntu-14-04
+===
+Source: https://www.digitalocean.com/community/tutorials/how-to-install-prometheus-using-docker-on-ubuntu-14-04
+
+Added: Fri Nov 11 13:22:51 CET 2016
+Created: PostedJanuary 12, 2016
+
+
+Introduction
++++
+
+Prometheus is an open source monitoring system and time series database. It addresses many aspects of monitoring such as the generation and collection of metrics, graphing the resulting data on dashboards, and alerting on anomalies. To achieve this, it offers a variety of components that are run separately but used in combination.
+
+Docker provides a way for you to encapsulate server processes using Linux containers (or other encapsulation technologies) so that they are more easily managed and isolated from each other. To learn more about Docker, see The Docker Ecosystem: An Introduction to Common Components.
+
+In this tutorial, we will learn how to install three key components for using Prometheus on Docker. These are:
+
+    - A Prometheus server to collect metrics and query them
+    - A Node Exporter to export system metrics in a Prometheus-compatible format
+    - Grafana, a web-based graphical dashboard builder that supports Prometheus among other backends
+
+There are many more components in the Prometheus ecosystem, but these three provide a good starting point for using Prometheus.
+
+
+Step 1 Installing Prometheus
++++
+
+This section will explain how to install the main Prometheus server using Docker. Make sure to install Docker per the Prerequisites section before continuing. The Prometheus server is the central piece of the Prometheus ecosystem and is responsible for collecting and storing metrics as well as processing expression queries and generating alerts.
+
+Docker container images for all Prometheus components are hosted under the prom organization on Docker Hub.
+
+https://hub.docker.com/u/prom/
+
+
+Running the prom/prometheus Docker image without any further options starts the Prometheus server with an example configuration file located at /etc/prometheus/prometheus.yml inside the container. It also uses a Docker data volume mounted at /prometheus inside the container to store collected metrics data.
+
+https://www.digitalocean.com/community/tutorials/how-to-work-with-docker-data-volumes-on-ubuntu-14-04
+
+
+This data volume directory is actually a directory on the host which Docker auto-creates when the container is first started. The data inside it is persisted between restarts of the same container.
+
+
+There are multiple ways for overriding the default configuration file. For example, a custom configuration file may be passed into the container from the host filesystem as a Docker data volume, or you could choose to build a derived Docker container with your own configuration file baked into the container image. In this tutorial, we will choose to pass in a configuration file from the host system.
+
+
+There are different patterns for organizing the storage of metrics as well. In this tutorial, we will use the Docker image's default behavior of using a Docker data volume to store the metrics. You may alternatively consider creating a data volume container if that suits your needs better.
+
+
+Note: To learn how to create a Docker data volume, read How To Work with Docker Data Volumes on Ubuntu 14.04.
+
+https://www.digitalocean.com/community/tutorials/how-to-work-with-docker-data-volumes-on-ubuntu-14-04
+
+First, create a minimal Prometheus configuration file on the host filesystem at ~/prometheus.yml:
+
+
+		#
+		$ nano ~/prometheus.yml
+
+Add the following contents to the file (replace your_server_ip with your Droplet's IP address):
+~/prometheus.yml
+
+
+		# A scrape configuration scraping a Node Exporter and the Prometheus server
+		# itself.
+		scrape_configs:
+		  # Scrape Prometheus itself every 5 seconds.
+		  - job_name: 'prometheus'
+			scrape_interval: 5s
+			# target_groups:
+			static_configs:
+			  - targets: ['localhost:9090']
+
+		  # Scrape the Node Exporter every 5 seconds.
+		  - job_name: 'node'
+			scrape_interval: 5s
+			# target_groups:
+			static_configs:
+			  - targets: ['192.168.x.y:9100']
+
+MY NOTE:
+Had to comment out 'target_groups' in the config above, and replace them with 'static_configs'.
+https://prometheus.io/docs/operating/configuration/
+Prior to v0.20, target_groups was used instead of static_configs. target_groups can still be used alternatively in v0.20 itself, but not in later versions.
+
+
+
+This example configuration makes Prometheus scrape metrics from itself (since Prometheus also exposes metrics about itself in a Prometheus-compatible format) as well as from a Node Exporter, which we will set up later. While Prometheus can connect to itself within its container using the localhost host name, it will need to scrape the Node Exporter using your server's external IP since the Node Exporter will run in a separate container with a separate networking namespace.
+
+Start the Prometheus Docker container with the external configuration file:
+
+$ docker run -d -p 9090:9090 -v ~/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus -config.file=/etc/prometheus/prometheus.yml -storage.local.path=/prometheus -storage.local.memory-chunks=10000
+---
+
+The first time you run this command, it will pull the Docker image from the Docker Hub.
+
+This command is quite long and contains many command line options. Let's take a look at it in more detail:
+
+   - The -d option starts the Prometheus container in detached mode, meaning that the container will be started in the background and will not be terminated by pressing CTRL+C.
+   - The -p 9090:9090 option exposes Prometheus's web port (9090) and makes it reachable via the external IP address of the host system.
+   - The -v [...] option mounts the prometheus.yml configuration file from the host filesystem into the location within the container where Prometheus expects it (/etc/prometheus/prometheus.yml).
+   - The -config.file option is set accordingly to the location of the Prometheus configuration file within in the container.
+   - The -storage.local.path option configures the metrics storage location within the container.
+   - Finally, the -storage.local.memory-chunks option adjusts Prometheus's memory usage to the host system's very small amount of RAM (only 512MB) and small number of stored time series in this tutorial (just under 1000). It instructs Prometheus to keep only 10000 sample chunks in memory (roughly 10 chunks per series), instead of the default of 1048576. This is a value you will definitely need to tune when running Prometheus on a machine with more RAM and when storing more time series. Refer to Prometheus's storage documentation for more details around this.
+
+
+You can list all running Docker containers using the following command:
+
+$ docker ps
+---
+
+For example, you will see something similar to the following for the Prometheus Docker container:
+
+
+		#
+		Output of `docker ps`
+		CONTAINER ID        IMAGE                COMMAND                  CREATED             STATUS              PORTS                    NAMES
+		6a89ac39911e        prom/prometheus      "/bin/prometheus -con"   2 hours ago         Up 2 hours          0.0.0.0:9090->9090/tcp   stoic_pike
+
+
+Using the container ID shown in the docker ps output, you may inspect the logs of the running Prometheus server with the command:
+
+$ docker logs container_id
+---
+
+In our example, the command would be:
+
+
+		#
+		$ docker logs 6a89ac39911e
+
+
+To find out where on the host's filesystem the metrics storage volume is stored, you can run the following with your container_id:
+
+$ docker inspect container_id
+---
+
+This will output information about your container's configuration, including host paths of any mounted Docker volumes.
+
+Find a section in the output that looks similar to this:
+
+
+		#
+		Output of `docker inspect`
+		...
+		"Mounts": [
+			{
+				"Source": "/home/sammy/prometheus.yml",
+				"Destination": "/etc/prometheus/prometheus.yml",
+				"Mode": "",
+				"RW": true
+			},
+			{
+				"Name": "821b0abc470a9c758ff35ed5cff69077423a629566082a605a01d8207d57cd6c",
+				"Source": "/var/lib/docker/volumes/821b0abc470a9c758ff35ed5cff69077423a629566082a605a01d8207d57cd6c/_data",
+				"Destination": "/prometheus",
+				"Driver": "local",
+				"Mode": "",
+				"RW": true
+			}
+		],
+		...
+
+
+In this example, the metrics are stored in /var/lib/docker/volumes/821b0abc470a9c758ff35ed5cff69077423a629566082a605a01d8207d57cd6c/_data on the host system. This directory was automatically created by Docker when first starting the Prometheus container. It is mapped into the /prometheus directory in the container. Data in this directory is persisted across restarts of the same container. If you prefer, you may also mount an existing host directory for storing metrics data. See How To Work with Docker Data Volumes on Ubuntu 14.04 for how to achieve this.
+
+
+You should now be able to reach your Prometheus server at http://your_server_ip:9090/. Verify that it is collecting metrics about itself by heading to http://your_server_ip:9090/status and locating the http://localhost:9090/metrics endpoint for the prometheus job in the Targets section. The State column for this target should show the the target's state as HEALTHY. In contrast, the http://localhost:9100/metrics (Node Exporter) endpoint should still show up as UNHEALTHY since the Node Exporter has not yet been started and thus cannot be scraped.
+
+To summarize, you now have Prometheus running as a Docker container using the custom Prometheus configuration file ~/prometheus.yml, which is located on the host filesystem. The metrics storage is located in the /prometheus directory in the container, which is backed on the host system by the path shown by the docker inspect command explained in this section.
+
+
+Step 2 Setting up Node Exporter
++++
+
+In this section, we will install the Prometheus Node Exporter. The Node Exporter is a server that exposes Prometheus metrics about the host machine (node) it is running on. This includes metrics about the machine's filesystems, networking devices, processor usage, memory usage, and more.
+
+Note that running the Node Exporter on Docker poses some challenges since its entire purpose is to expose metrics about the host it is running on. If we run it on Docker without further options, Docker's namespacing of resources such as the filesystem and the network devices will cause it to only export metrics about the container's environment, which will differ from the host's environment. Thus it is usually recommended to run the Node Exporter directly on the host system outside of Docker. However, if you have a requirement to manage all your processes using Docker, we will describe a workaround which provides a reasonable approximation for exporting host metrics from within Docker.
+
+To start the Node Exporter on port 9100 using Docker:
+
+$ docker run -d -p 9100:9100 -v "/proc:/host/proc" -v "/sys:/host/sys" -v "/:/rootfs" --net="host" prom/node-exporter -collector.procfs /host/proc -collector.sysfs /host/proc -collector.filesystem.ignored-mount-points "^/(sys|proc|dev|host|etc)($|/)"
+---
+
+The following Docker and Node Exporter flags are used to provide a reasonable approximation for the host metrics:
+
+
+    - On Linux, the Node Exporter gathers most of its metrics from the /proc and /sys filesystems. These filesystems are mounted from the host into the container underneath a /host directory, using Docker's -v flag.
+    - Via the Node Exporter's -collector.procfs and -collector.sysfs flags, we instruct the Node Exporter to look for the /proc and /sys filesystems in a non-standard location.
+    - To report host filesystem metrics, we also mount the entire root (/) filesystem into the container (at /rootfs), again using Docker's -v flag.
+    - Use Node Exporter's -collector.filesystem.ignored-mount-points flag to ignore any other filesystems within the container that do not belong to the host system. This option takes a regular expression of mount points to exclude from the reported metrics.
+    - Using the --net=host Docker flag, we place the container into the same network stack as the host, so that reading from files such as /proc/net/dev will yield the same results as on the host (reading from the /proc filesystem mounted in from the host is not sufficient).
+
+
+Note that some metrics will still differ in comparison to a Node Exporter running directly on the host. Specifically, metrics reported about filesystem usage will have a /rootfs prefix in the value of their mountpoint labels, due to us mounting in the root filesystem under this prefix in the container. There is also no guarantee that the described workarounds will be sufficient for any future Node Exporter features, so run Node Exporter on Docker at your own discretion.
+
+
+The Prometheus server should now automatically start scraping the Node Exporter. Head to your Prometheus server's status page at http://your_server_ip:9090/status and verify that the http://your_server_ip:9100/metrics target for the node job is now showing a HEALTHY state.
+
+MY_NOTE:
+I could not get node to change the status to HEALTHY/UP even though it is available at the specified URL.
+
+Step 3 Setting up Grafana
++++
+
+Finally, we will set up Grafana. Grafana is a graphical dashboard builder that supports Prometheus as a backend to query for data to graph.
+
+Grafana stores its dashboard metadata (such as which dashboards exist and what graphs they should show) in a configurable SQL-based database. Grafana supports using a local file-backed SQLite3 database as well as external database servers such as MySQL or PostgreSQL for this.
+
+In this tutorial, we will use a SQLite3 database backed by a Docker data volume. See How and When to Use Sqlite for more information.
+
+
+Launch Grafana as a Docker container with an administrator password (admin_password) of your choosing:
+
+$ docker run -d -p 3000:3000 -e "GF_SECURITY_ADMIN_PASSWORD=admin_password" -v ~/grafana_db:/var/lib/grafana grafana/grafana
+---
+
+
+This will download the Grafana Docker image from the Docker Hub and create a new Docker volume placed at ~/grafana_db on the host system and at /var/lib/grafana in the container filesystem. In the container, Grafana will then automatically create and initialize its SQLite3 database at /var/lib/grafana/grafana.db.
+
+The -e flag allows passing environment variables to the process launched inside the Docker container. Here, we use it to set the GF_SECURITY_ADMIN_PASSWORD environment variable to the desired dashboard administrator password, overriding the default password of admin. Environment variables may also be used to override any other Grafana configuration settings. See Using environment variables for more details.
+
+To verify that Grafana is running correctly, head to http://your_server_ip:3000/. The administrator username is admin and the password is the one you chose when starting the Docker container previously.
+
+After logging in, you should see Grafana's main view.
+
+See the Grafana documentation for more on how to get started with Grafana. The Prometheus Grafana documentation also shows how to use Grafana in combination with Prometheus specifically.
+
+Conclusion
+
+Congratulations! You have set up a Prometheus server, a Node Exporter, and Grafana — all using Docker. Even though these are currently all running on the same machine, this is only for demonstration purposes. In production setups, one would usually run the Node Exporter on every monitored machine, multiple Prometheus servers (as needed by the organization), as well as a single Grafana server to graph the data from these servers.
+
+To learn more about using Prometheus in general, refer to its documentation.
+
+
+
+Title: how-to-configure-a-continuous-integration-testing-environment-with-docker-and-docker-compose-on-ubuntu-14-04
+===
+Source: https://www.digitalocean.com/community/tutorials/how-to-configure-a-continuous-integration-testing-environment-with-docker-and-docker-compose-on-ubuntu-14-04
+
+Added: Mon Nov 14 13:28:56 CET 2016
+Created: UpdatedNovember 3, 2016
+
+
+Introduction
++++
+
+Continuous integration (CI) refers to the practice where developers integrate code as often as possible and every commit is tested before and after being merged into a shared repository by an automated build.
+
+CI speeds up your development process and minimizes the risk of critical issues in production, but it is not trivial to set up; automated builds run in a different environment where the installation of runtime dependencies and the configuration of external services might be different than in your local and dev environments.
+
+
+Docker is a containerization platform which aims to simplify the problems of environment standardization so the deployment of applications can also be standardized (find out more about Docker). For developers, Docker allows you to simulate production environments on local machines by running application components in local containers. These containers are easily automatable using Docker Compose, independently of the application and the underlying OS.
+
+This tutorial uses Docker Compose to demonstrate the automation of CI workflows.
+
+We will create a Dockerized "Hello world" type Python application and a Bash test script. The Python application will require two containers to run: one for the app itself, and a Redis container for storage that's required as a dependency for the app.
+
+
+Then, the test script will be Dockerized in its own container and the whole testing environment moved to a docker-compose.test.yml file so we can make sure we are running every test execution on a fresh and uniform application environment.
+
+This approach shows how you can build an identical, fresh testing environment for your application, including its dependencies, every time you test it.
+
+Thus, we automate the CI workflows independently of the application under test and the underlying infrastructure.
+
+
+Step 3 Create the "Hello World" Python Application
++++
+
+In this step we will create a simple Python application as an example of the type of application you can test with this setup.
+
+Create a fresh folder for our application by executing:
+
+
+		#
+		cd ~
+		mkdir hello_world
+		cd hello_world
+
+
+Edit a new file app.py with nano:
+
+		
+		#
+		nano app.py
+
+
+Add the following content:
+
+
+		
+		from flask import Flask
+		from redis import Redis
+
+		app = Flask(__name__)
+		redis = Redis(host="redis")
+
+		@app.route("/")
+		def hello():
+			visits = redis.incr('counter')
+			html = "<h3>Hello World!</h3>" \
+				   "<b>Visits:</b> {visits}" \
+				   "<br/>"
+			return html.format(visits=visits)
+
+		if __name__ == "__main__":
+			app.run(host="0.0.0.0", port=80)
+
+
+
+app.py is a web application based on Flask that connects to a Redis data service. The line visits = redis.incr('counter') increases the number of visits and persists this value in Redis. Finally, a Hello World message with the number of visits is returned in HTML.
+
+Our application has two dependencies, Flask and Redis, which you can see in the first two lines. These dependencies must be defined before we can execute the application. Edit a new file:
+
+
+		#
+		nano requirements.txt
+
+
+Add the contents:
+
+		
+		Flask
+		Redis
+
+
+Step 4  Dockerize the "Hello World" Application
++++
+
+Docker uses a file called Dockerfile to indicate the required steps to build a Docker image for a given application. Edit a new file:
+
+
+		#
+		nano Dockerfile
+
+Add the following contents:
+
+
+		#
+		FROM python:2.7
+
+		WORKDIR /app
+
+		ADD requirements.txt /app/requirements.txt
+		RUN pip install -r requirements.txt
+
+		ADD app.py /app/app.py
+
+		EXPOSE 80
+
+		CMD ["python", "app.py"]
+
+
+
+Let's analyze the meaning of each line:
+
+
+    - FROM python:2.7: indicates that our "Hello World" application image is built from the official python:2.7 Docker image
+    - WORKDIR /app: sets the working directory inside of the Docker image to /app
+    - ADD requirements.txt /app/requirements.txt: adds the file requirements.txt to our Docker image
+    - RUN pip install -r requirements.txt: installs the application pip dependencies
+    - ADD app.py /app/app.py: adds our application source code to the Docker image
+    - EXPOSE 80: indicates that our application can be reached at port 80 (the standard public web port)
+    - CMD ["python", "app.py"]: the command that starts our application
+
+
+This Dockerfile file has all the information needed to build the main component of our "Hello World" application.
+
+
+
+The Dependency
+
+Now we get to the more sophisticated part of the example. Our application requires Redis as an external service. This is the type of dependency that could be difficult to set up in an identical way every time in a traditional Linux environment, but with Docker Compose we can set it up in a repeatable way every time.
+
+
+Let's create a docker-compose.yml file to start using Docker Compose.
+
+Edit a new file:
+
+
+		#
+		nano docker-compose.yml
+
+Add the following contents:
+
+
+		#
+		web:
+		  build: .
+		  dockerfile: Dockerfile
+		  links:
+			- redis
+		  ports:
+			- "80:80"
+		redis:
+		  image: redis
+
+
+
+This Docker Compose file indicates how to spin up the "Hello World" application locally in two Docker containers.
+
+
+It defines two containers, web and redis.
+
+
+    - web uses the current folder for the build context, and builds our Python application from the Dockerfile file we just created. This is a local Docker image we made just for our Python application. It defines a link to the redis container in order to have access to the redis container IP. It also makes port 80 publicly accessible from the Internet using your Ubuntu server's public IP
+
+    - redis is executed from a standard public Docker image, named redis
+
+
+Step 5  Deploy the "Hello World" Application
++++
+
+In this step, we'll deploy the application, and by the end it will be accessible over the Internet. For the purposes of your deployment workflow, you could consider this to be either a dev, staging, or production environment, since you could deploy the application the same way numerous times.
+
+The docker-compose.yml and Dockerfile files allow you to automate the deployment of local environments by executing:
+
+$ docker-compose -f ~/hello_world/docker-compose.yml build
+---
+
+$ docker-compose -f ~/hello_world/docker-compose.yml up -d
+---
+
+The first line builds our local application image from the Dockerfile file. The second line runs the web and redis containers in daemon mode (-d), as specified in the docker-compose.yml file.
+
+Check that the application containers have been created by executing:
+
+$ docker ps
+---
+
+
+This should show two running containers, named helloworld_web_1 and helloworld_redis_1.
+
+Let's check to see that the application is up. We can get the IP of the helloworld_web_1 container by executing:
+
+
+		#
+		WEB_APP_IP=$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' helloworld_web_1)
+		echo $WEB_APP_IP
+
+Check that the web application is returning the proper message:
+
+
+		#
+		curl http://${WEB_APP_IP}:80
+
+This should return something like:
+
+
+		#
+		<h3>Hello World!</h3><b>Visits:</b> 1<br/>
+
+
+The number of visits is incremented every time you hit this endpoint. You can also access the "Hello World" application from your browser by visiting the public IP address of your Ubuntu server.
+
+How to Customize for Your Own Application
+
+The key to setting up your own application is to put your app in its own Docker container, and to run each dependency from its own container. Then, you can define the relationships between the containers with Docker Compose, as demonstrated in the example. Docker Compose is covered in greater detail in this Docker Compose article.
+
+For another example of how to get an application running across several containers, read this article about running WordPress and phpMyAdmin with Docker Compose.
+
+
+Step 6  Create the Test Script
++++
+
+Now we'll create a test script for our Python application. This will be a simple script that checks the application's HTTP output. The script is an example of the type of test that you might want to run as part of your continuous integration deployment process.
+
+Edit a new file:
+
+
+		#
+		nano test.sh
+
+Add the following contents:
+
+
+		sleep 5
+		if curl web | grep -q '<b>Visits:</b> '; then
+		  echo "Tests passed!"
+		  exit 0
+		else
+		  echo "Tests failed!"
+		  exit 1
+		fi
+
+
+test.sh tests for basic web connectivity of our "Hello World" application. It uses cURL to retrieve the number of visits and reports on whether the test was passed or not.
+
+Step 7  Create the Testing Environment
++++
+
+In order to test our application, we need to deploy a testing environment. And, we want to make sure it's identical to the live application environment we created in Step 5.
+
+First, we need to Dockerize our testing script by creating a new Dockerfile file. Edit a new file:
+
+
+		#
+		nano Dockerfile.test
+
+Add the following contents:
+
+
+		#
+		FROM ubuntu:trusty
+
+		RUN apt-get update && apt-get install -yq curl && apt-get clean
+
+		WORKDIR /app
+
+		ADD test.sh /app/test.sh
+
+		CMD ["bash", "test.sh"]
+
+
+Dockerfile.test extends the official ubuntu:trusty image to install the curl dependency, adds tests.sh to the image filesystem, and indicates the CMD command that executes the test script with Bash.
+
+Once our tests are Dockerized, they can be executed in a replicable and agnostic way.
+
+The next step is to link our testing container to our "Hello World" application. Here is where Docker Compose comes to the rescue again. Edit a new file:
+
+
+		#
+		nano docker-compose.test.yml
+
+
+Add the following contents:
+
+
+		#
+		sut:
+		  build: .
+		  dockerfile: Dockerfile.test
+		  links:
+			- web
+		web:
+		  build: .
+		  dockerfile: Dockerfile
+		  links:
+			- redis
+		redis:
+		  image: redis
+
+
+
+The second half of the Docker Compose file deploys the main web application and its redis dependency in the same way as the previous docker-compose.yml file. This is the part of the file that specifies the web and redis containers. The only difference is that the web container no longer exposes port 80, so the application won't be available over the public Internet during the tests. So, you can see that we're building the application and its dependencies exactly the same way as they are in the live deployment.
+
+
+The docker-compose.test.yml file also defines a sut container (named for system under tests) that is responsible for executing our integration tests. The sut container specifies the current directory as our build directory and specifies our Dockerfile.test file. It links to the web container so the application container's IP address is accessible to our test.sh script.
+
+
+How to Customize for Your Own Application
+
+Note that docker-compose.test.yml might include dozens of external services and multiple test containers. Docker will be able to run all these dependencies on a single host because every container shares the underlying OS.
+
+If you have more tests to run on your application, you can create additional Dockerfiles for them, similar to the Dockerfile.test file shown above.
+
+Then, you can add additional containers below the sut container in the docker-compose.test.yml file, referencing the additional Dockerfiles.
+
+
+
+Step 8  Test the "Hello World" Application
++++
+
+Finally, extending the Docker ideas from local environments to testing environments, we have an automated way of testing our application using Docker by executing:
+
+$ docker-compose -f ~/hello_world/docker-compose.test.yml -p ci build
+---
+
+
+This command builds the local images needed by docker-compose.test.yml. Note that we are using -f to point to docker-compose.test.yml and -p to indicate a specific project name.
+
+Now spin up your fresh testing environment by executing:
+
+$ docker-compose -f ~/hello_world/docker-compose.test.yml -p ci up -d
+---
+
+
+Check the output of the sut container by executing:
+
+$ docker logs -f ci_sut_1
+---
+
+
+		#
+		% Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+										 Dload  Upload   Total   Spent    Left  Speed
+		100    42  100    42    0     0   3902      0 --:--:-- --:--:-- --:--:--  4200
+		Tests passed!
+
+
+And finally, check the exit code of the sut container to verify if your tests have passed:
+
+$ docker wait ci_sut_1
+---
+
+		#
+		Output
+		0
+
+
+After the execution of this command, the value of $? will be 0 if the tests passed. Otherwise, our application tests failed.
+
+Note that other CI tools can clone our code repository and execute these few commands to verify if tests are passing with the latest bits of your application without worrying about runtime dependencies or external service configurations.
+
+That's it! We've successfully run our test in a freshly built environment identical to our production environment.
+
+
+
+Conclusion
++++
+
+Thanks to Docker and Docker Compose, we have been able to automate how to build an application (Dockerfile), how to deploy a local environment (docker-compose.yml), how to build a testing image (Dockerfile.test), and how to execute (integration) tests (docker-compose.test.yml) for any application.
+
+In particular, the advantages of using the docker-compose.test.yml file for testing are that the testing process is:
+
+    - Automatable: the way a tool executes the docker-compose.test.yml is independent of the application under test
+    - Light-weight: hundreds of external services can be deployed on a single host, simulating complex (integration) test environments
+    - Agnostic: avoid CI provider lock-in, and your tests can run in any infrastructure and on any OS which supports Docker
+    - Immutable: tests passing on your local machine will pass in your CI tool
+
+This tutorial shows an example of how to test a simple "Hello World" application.
+
+Now it's time to use your own application files, Dockerize your own application test scripts, and create your own docker-compose.test.yml to test your application in a fresh and immutable environment.
+
+
 
