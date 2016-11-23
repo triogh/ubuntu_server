@@ -1,0 +1,40 @@
+---
+# http://www.monitorix.org/doc-debian.html
+- name: Install monitorix related dependencies
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - rrdtool
+    - perl
+    - libwww-perl
+    - libmailtools-perl
+    - libmime-lite-perl
+    - librrds-perl
+    - libdbi-perl
+    - libxml-simple-perl
+    - libhttp-server-simple-perl
+    - libconfig-general-perl
+    - libio-socket-ssl-perl
+
+- name: Check if monitorix deb pkg is already installed
+  command: dpkg-query -W monitorix 
+  register: my_monitorix_pkg_installed_check
+  failed_when: my_monitorix_pkg_installed_check.rc > 1
+  changed_when: my_monitorix_pkg_installed_check.rc == 1
+
+- name: Download monitorix deb pkg
+  get_url:
+    url: http://www.monitorix.org/monitorix_3.9.0-izzy1_all.deb
+    dest: /tmp/monitorix_3.9.0-izzy1_all.deb
+    checksum: sha1:e295dda6b24a2330f4c6e1c0fdc901ec84527de4
+  when: my_monitorix_pkg_installed_check.rc == 1
+
+- name: Install monitorix deb.pkg
+  become: true
+  apt:
+    deb: /tmp/monitorix_3.9.0-izzy1_all.deb
+  when: my_monitorix_pkg_installed_check.rc == 1
+
+- name: Ensure monitorix service is started
+  become: true
+  service: name=monitorix state=started

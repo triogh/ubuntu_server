@@ -144,6 +144,7 @@
    - include: task_adds_python3_related_pkgs.yml
    - include: task_adds_python2_related_pkgs.yml
    - include: task_adds_docker_related_pkgs.yml
+   - include: task_adds_monitorix_related_pkgs.yml
 
    - name: Equivalent of "aptitude safe-upgrade"
      become: True
