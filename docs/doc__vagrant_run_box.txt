@@ -1,0 +1,4 @@
+# Thu Dec  1 17:13:31 CET 2016
+
+$ vagrant init ubuntu/trusty64
+$ vagrant up
