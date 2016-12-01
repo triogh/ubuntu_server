@@ -1,0 +1,6 @@
+---
+- name: Install clipboard manager related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - clipit

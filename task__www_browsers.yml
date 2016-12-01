@@ -1,0 +1,8 @@
+---
+- name: Install browser related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - firefox
+    - google-chrome-stable
+    - chromium-browser

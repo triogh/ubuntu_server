@@ -37,13 +37,44 @@
      apt: update_cache=yes cache_valid_time=3600
 
 
-   - name: Install awesomeWM and xinit
+   # Install some userland packages
+   - include: task__awesomeWM.yml
+   - include: task__sound.yml
+   - include: task__virtualization.yml 
+   - include: task__nfs_client.yml
+   - include: task__perl.yml
+   - include: task__python2.yml
+   - include: task__python3.yml
+   - include: task__docker.yml
+   - include: task__monitorix.yml
+   - include: task__multimedia.yml
+   - include: task__pdf.yml
+   - include: task__www_browsers.yml
+   - include: task__office.yml
+   - include: task__encryption.yml
+   - include: task__firewall.yml
+   - include: task__shell_compression_utils.yml
+   - include: task__shell_monitor_utils.yml
+   - include: task__shell_network_utils.yml
+   - include: task__shell_terminal_multiplexers.yml
+   - include: task__shell_terminals.yml
+   - include: task__shell_filemanager_ranger.yml
+   - include: task__shell_uncategorized_utils.yml
+   - include: task__create_documentation_utils.yml
+   - include: task__cvs.yml
+   - include: task__ntp_client.yml
+   - include: task__apt_dpkg_related_pkgs.yml
+   - include: task__display_settings.yml
+   - include: task__irc_news_maillist_rss.yml
+   - include: task__bluetooth.yml
+   - include: task__clipboard_manager.yml
+   - include: task__digital_journal.yml
+
+   - name: Equivalent of "aptitude safe-upgrade"
      become: True
-     apt: name={{ item }} state=present
-     with_items:
-      - awesome
-      - libcairo-gobject2
-      - xinit
+     apt: upgrade=safe
+     tags: upgrade-pkgs
+
 
    - name: Check if "~user/.xinitrc" file exists
      stat: path={{ ansible_env.HOME }}/.xinitrc
@@ -55,101 +86,6 @@
 
    - name: Add line "exec awesome" to "~user/.xinitrc" file, if not present
      lineinfile: dest={{ ansible_env.HOME }}/.xinitrc line="exec awesome"
-
-
-   - name: Install alsa-base and pulseaudio packages
-     become: True
-     apt: name={{ item }} state=present
-     with_items:
-      - alsa-base
-      - pulseaudio
-
-
-   - name: Install some userland packages
-     become: True
-     apt: name={{ item }} state=latest
-     with_items:
-      - vlc
-      - mpv
-      - clementine
-      - cmus
-      - fatsort
-      - comix
-      - calibre
-      - gpicview
-      - libreoffice
-      - impressive
-      - firefox
-      - google-chrome-stable
-      - chromium-browser
-      - nload
-      - tmux
-      - terminator
-      - nmap
-      - lftp
-      - tree
-      - htop
-      - perl-doc
-      - ranger
-      - lynx
-      - elinks
-      - highlight
-      - atool
-      - mediainfo
-      - vim
-      - redshift
-      - workrave
-      - clipit
-      - dict
-      - unattended-upgrades
-      - aptitude
-      - ufw
-      - fail2ban
-      - etckeeper
-      - checkinstall
-      - ntp
-      - ntp-doc
-      - git
-      - weechat
-      - alpine
-      - slrn
-      - newsbeuter
-      - autofs
-      - wine
-      - smartmontools
-      - libcpanplus-perl
-      - cpanminus
-      - pv
-      - bluez
-      - rfkill
-      - lynx
-      - html2text
-      - evince
-      - xbacklight
-      - dstat
-      - rar
-      - pdfshuffler
-      - poppler-utils
-      - xournal
-      - cryptsetup
-      - perltidy
-      - unzip
-      - ncdu
-      - txt2html
-      - libhtml-toc-perl
-      - bridge-utils
-
-   - include: task_adds_virtualization.yml 
-   - include: task_adds_nfs_client_related_pkgs.yml
-   - include: task_adds_python3_related_pkgs.yml
-   - include: task_adds_python2_related_pkgs.yml
-   - include: task_adds_docker_related_pkgs.yml
-   - include: task_adds_monitorix_related_pkgs.yml
-
-   - name: Equivalent of "aptitude safe-upgrade"
-     become: True
-     apt: upgrade=safe
-     tags: upgrade-pkgs
 
 
 
