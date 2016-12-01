@@ -43,6 +43,30 @@
                      <li><a href="#h-1.1.6.5">$ ansible -m shell -a 'free -m' host1</a></li>
                   </ul>
                </li>
+               <li><a href="#h-1.1.7">Comments</a></li>
+            </ul>
+         </li>
+         <li><a href="#h-1.2">Title: how-to-create-ansible-playbooks-to-automate-system-configuration-on-ubuntu</a>
+            <ul>
+               <li><a href="#h-1.2.1">Introduction</a></li>
+               <li><a href="#h-1.2.2">What are Ansible Playbooks?</a></li>
+               <li><a href="#h-1.2.3">Exploring a Basic Playbook</a>
+                  <ul>
+                     <li><a href="#h-1.2.3.1">$ ansible -m apt -a 'whatever' all</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.2.4">Running an Ansible Playbook</a>
+                  <ul>
+                     <li><a href="#h-1.2.4.1">$ ansible-playbook playbook.yml</a></li>
+                     <li><a href="#h-1.2.4.2">$ ansible-playbook nginx.yml</a></li>
+                     <li><a href="#h-1.2.4.3">$ ansible-playbook -l host_subset playbook.yml</a></li>
+                     <li><a href="#h-1.2.4.4">$ ansible-playbook -l host3 nginx.yml</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.2.5">Adding Features to the Playbook</a></li>
+               <li><a href="#h-1.2.6">Add a Default Index File</a></li>
+               <li><a href="#h-1.2.7">Registering Results</a></li>
+               <li><a href="#h-1.2.8">Comments</a></li>
             </ul>
          </li>
       </ul>
@@ -405,7 +429,421 @@ Created: PostedFebruary 6, 2014
 </p>
 <p>By now, you should have your Ansible server configured to communicate with the servers that you would like to control. We have verified that Ansible can communicate with each host and we have used the ansible command to execute simple tasks remotely.
 </p>
-<p>Although this is useful, we have not covered the most powerful feature of Ansible in this article: Playbooks. We have set up a great foundation for working with our servers through Ansible, but the heavy lifting will be done in a future article, when we cover how to use Playbooks to automate configuration of your remote computers.</p>
+<p>Although this is useful, we have not covered the most powerful feature of Ansible in this article: Playbooks. We have set up a great foundation for working with our servers through Ansible, but the heavy lifting will be done in a future article, when we cover how to use Playbooks to automate configuration of your remote computers.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.1.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_1_7">Comments</a></h3>
+
+<p>June 1, 2014
+</p>
+<p>In the section "Using Simple Ansible Commands," you say, "We can specify multiple hosts by separating them with colons." More precisely you can do the union, intersection, or difference of the machines or groups listed. The Ansible documents on this are a bit weak, <a href="http://docs.ansible.com/intro_patterns.html">http://docs.ansible.com/intro_patterns.html</a> but I learned it from <a href="http://zaiste.net/2014/05/ansible_101/">http://zaiste.net/2014/05/ansible_101/</a> . Look at the middle of the page for the section named Usage. "Groups can be combined A:B designates the union of groups A and B A:&amp;B designates the intersection of groups A and B A:!B designates the difference, all from A without those in B"
+</p>
+<p>October 25, 2014
+</p>
+<p>Good introductory tutorial! I think it would be interesting to point that connecting and running the tasks as root might not be the best practice on a daily basis, as all commands will be executed as root.
+</p>
+<h2><!-- #BeginTocAnchorNameBegin --><a name="h-1.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2">Title: how-to-create-ansible-playbooks-to-automate-system-configuration-on-ubuntu</a></h2>
+<p>Source: <a href="https://www.digitalocean.com/community/tutorials/how-to-create-ansible-playbooks-to-automate-system-configuration-on-ubuntu">https://www.digitalocean.com/community/tutorials/how-to-create-ansible-playbooks-to-automate-system-configuration-on-ubuntu</a>
+</p>
+<p>Added: Thu Dec  1 19:52:05 CET 2016<br/>
+Created: PostedFebruary 7, 2014
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_1">Introduction</a></h3>
+
+<p>Ansible is an easy configuration management system that can be used to automate and organize your system configuration tasks for a large network of computers. While some other configuration management systems require many different packages to be installed on the server and client systems, with Ansible, you only need to install a server component and have SSH access to the client machines.
+</p>
+<p>In a previous guide, we discussed how to install the Ansible software and learn basic commands. In this guide, we will discuss Ansible playbooks, which are Ansible's way of creating automated scripts to configure client computers.
+</p>
+<p>We will assume that you have a configured Ansible server and a few clients, just as we left off in the last tutorial. In our guide, the server is a Ubuntu 12.04 machine, and the clients that we are going to be configuring are also Ubuntu 12.04 machines, for ease of explanation.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_2">What are Ansible Playbooks?</a></h3>
+
+<p>Ansible playbooks are a way to send commands to remote computers in a scripted way. Instead of using Ansible commands individually to remotely configure computers from the command line, you can configure entire complex environments by passing a script to one or more systems.
+</p>
+<p>Ansible playbooks are written in the YAML data serialization format. If you don't know what a data serialization format is, think of it as a way to translate a programmatic data structure (lists, arrays, dictionaries, etc) into a format that can be easily stored to disk. The file can then be used to recreate the structure at a later point. JSON is another popular data serialization format, but YAML is much easier to read.
+</p>
+<p>Each playbook contains one or more plays, which map hosts to a certain function. Ansible does this through something called tasks, which are basically module calls.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_3">Exploring a Basic Playbook</a></h3>
+
+<p>Let's look at a basic playbook:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+
+                  handlers:
+                        - name: start nginx
+                          service: name=nginx state=started
+</pre>
+<p>Let's break this down in sections so we can understand how these files are built and what each piece means.
+</p>
+<p>The file starts with:
+</p>
+<pre>
+                #
+                #
+                ---
+</pre>
+<p>This is a requirement for YAML to interpret the file as a proper document. YAML allows multiple "documents" to exist in one file, each separated by ---, but Ansible only wants one per file, so this should only be present at the top of the file.
+</p>
+<p>YAML is very sensitive to white-space, and uses that to group different pieces of information together. You should use only spaces and not tabs and you must use consistent spacing for your file to be read correctly. Items at the same level of indentation are considered sibling elements.
+</p>
+<p>Items that begin with a - are considered list items. Items that have the format of key: value operate as hashes or dictionaries. That's pretty much all there is to basic YAML.
+</p>
+<p>YAML documents basically define a hierarchical tree structure with the containing elements further to the left.
+</p>
+<p>On the second line, we have this:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+</pre>
+<p>This is a list item in YAML as we learned above, but since it is at the left-most level, it is also an Ansible "play". Plays are basically groups of tasks that are performed on a certain set of hosts to allow them to fulfill the function you want to assign to them. Each play must specify a host or group of hosts, as we do here.
+</p>
+<p>Next, we have a set of tasks:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+</pre>
+<p>At the top level, we have "tasks:" at the same level as "hosts:". This contains a list (because it starts with a "-") which contains key-value pairs.
+</p>
+<p>The first one, "name", is more of a description than a name. You can call this whatever you would like.
+</p>
+<p>The next key is "apt". This is a reference to an Ansible module, just like when we use the ansible command and type something like:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.3.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_3_1">$ ansible -m apt -a 'whatever' all</a></h4>
+
+<p>This module allows us to specify a package and the state that it should be in, which is "installed" in our case. The update-cache=true part tells our remote machine to update its package cache (apt-get update) prior to installing the software.
+</p>
+<p>The "notify" item contains a list with one item, which is called "start nginx". This is not an internal Ansible command, it is a reference to a handler, which can perform certain functions when it is called from within a task. We will define the "start nginx" handler below.
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+
+                  handlers:
+                        - name: start nginx
+                          service: name=nginx state=started
+</pre>
+<p>The "handlers" section exists at the same level as the "hosts" and "tasks". Handlers are just like tasks, but they only run when they have been told by a task that changes have occurred on the client system.
+</p>
+<p>For instance, we have a handler here that starts the Nginx service after the package is installed. The handler is not called unless the "Installs nginx web server" task results in changes to the system, meaning that the package had to be installed and wasn't already there.
+</p>
+<p>We can save this playbook into a file called something like "nginx.yml".
+</p>
+<p>Just for some context, if you were to write this same file in JSON, it might look something like this:
+</p>
+<pre>
+                #
+                #
+                [
+                        {
+                                "hosts": "droplets",
+                                "tasks": [
+                                        {
+                                                "name": "Installs nginx web server",
+                                                "apt": "pkg=nginx state=installed update_cache=true",
+                                                "notify": [
+                                                        "start nginx"
+                                                ]
+                                        }
+                                ],
+                                "handlers": [
+                                        {
+                                                "name": "start nginx",
+                                                "service": "name=nginx state=started"
+                                        }
+                                ]
+                        }
+                ]
+</pre>
+<p>As you can see, YAML is much more compact and most people would say more readable.
+</p>
+<dl>
+  <dt>MY NOTE</dt>
+<dd>Two perl scripts, first just a proof of concept.
+Second works on the example playbook given above, and translates it to JSON, but it had problems with tabs, and so i had to remove tabs, and use spaces instead as indentation in YAML.
+</dd></dl>
+<p>First script.
+</p>
+<pre>
+                #
+                $ cat yaml2json.pl
+                #!/usr/bin/env perl
+                # Name:
+                # Version:
+
+                use strict;
+                use warnings;
+
+                use YAML;
+                use JSON;
+
+                # Load a YAML hash containing a scalar ref as a value.
+                my ($hashref) = Load(&lt;&lt;'END_YAML');
+                ---
+                bar: ref
+                foo: 1
+                END_YAML
+
+                use Data::Dump;
+                dd $hashref;
+
+                my $json_text = encode_json($hashref);
+</pre>
+<dl>
+  <dt>Output</dt>
+<dd>
+</dd></dl>
+<pre>
+                #
+                $ perl yaml2json.pl
+                { bar =&gt; "ref", foo =&gt; 1 }
+</pre>
+<p>Second script.
+</p>
+<pre>
+                #
+                $ cat yaml2json_2.pl
+                #!/usr/bin/env perl
+                # Name:
+                # Version:
+
+                use strict;
+                use warnings;
+
+                use YAML;
+                use JSON;
+
+                my $slurped;
+
+                {
+                local $/ = undef;
+                $slurped = &lt;DATA&gt;;
+                }
+
+                # Load a YAML hash containing a scalar ref as a value.
+                my ($hashref) = Load($slurped);
+
+                use Data::Dump;
+                dd $hashref;
+
+                my $json_text = encode_json($hashref);
+                __DATA__
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+
+                  handlers:
+                        - name: start nginx
+                          service: name=nginx state=started
+</pre>
+<dl>
+  <dt>Output</dt>
+<dd>
+                
+</dd></dl>
+<pre>
+                #
+                $ perl yaml2json_2.pl
+                [
+                  {
+                        handlers =&gt; [
+                                                  { name =&gt; "start nginx", service =&gt; "name=nginx state=started" },
+                                                ],
+                        hosts    =&gt; "droplets",
+                        tasks    =&gt; [
+                                                  {
+                                                        apt =&gt; "pkg=nginx state=installed update_cache=true",
+                                                        name =&gt; "Installs nginx web server",
+                                                        notify =&gt; ["start nginx"],
+                                                  },
+                                                ],
+                  },
+                ]
+</pre>
+<p>The source of the first script.<br/>
+<a href="http://stackoverflow.com/questions/25633657/perl-yaml-to-json#25633718">http://stackoverflow.com/questions/25633657/perl-yaml-to-json#25633718</a>
+</p>
+<p>Slurp whole YAML into scalar variable, found useful example on page below.
+<a href="https://perlmaven.com/slurp">https://perlmaven.com/slurp</a>
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_4">Running an Ansible Playbook</a></h3>
+
+<p>Once you have a playbook built, you can call it easily using this format:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.4.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_4_1">$ ansible-playbook playbook.yml</a></h4>
+
+<p>For instance, if we wanted to install and start up Nginx on all of our droplets, we could issue this command:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.4.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_4_2">$ ansible-playbook nginx.yml</a></h4>
+
+<p>Since the playbook itself specifies the hosts that it should run against (namely, the "droplets" group we created in the last tutorial), we do not have to specify a host to run against.
+</p>
+<p>However, if we would like to filter the host list to only apply to one of those hosts, we can add a flag to specify a subset of the hosts in the file:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.4.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_4_3">$ ansible-playbook -l host_subset playbook.yml</a></h4>
+
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.4.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_4_4">$ ansible-playbook -l host3 nginx.yml</a></h4>
+
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_5">Adding Features to the Playbook</a></h3>
+
+<p>Right now our playbook looks like this:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+
+                  handlers:
+                        - name: start nginx
+                          service: name=nginx state=started
+</pre>
+<p>It is simple and it works, but all it is doing is installing a piece of software and starting it. That's not very beneficial by itself.
+</p>
+<p>We can start to expand the functionality by adding tasks to our playbook.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_6">Add a Default Index File</a></h3>
+
+<p>We can tell it to transfer a file from our Ansible server onto the host by adding some lines like this:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+
+                        - name: Upload default index.html for host
+                          copy: src=static_files/index.html dest=/usr/share/nginx/www/ mode=0644
+
+                  handlers:
+                        - name: start nginx
+                          service: name=nginx state=started
+</pre>
+<p>We can then make a directory called static_files in our current directory and place an index.html file inside.
+</p>
+<pre>
+                #
+                mkdir static_files
+                nano static_files/index.html
+</pre>
+<p>Inside of this file, let's just create a basic html structure:
+</p>
+<pre>
+                #
+                &lt;html&gt;
+                  &lt;head&gt;
+                        &lt;title&gt;This is a sample page&lt;/title&gt;
+                  &lt;/head&gt;
+                  &lt;body&gt;
+                        &lt;h1&gt;Here is a heading!&lt;/h1&gt;
+                        &lt;p&gt;Here is a regular paragraph.  Wow!&lt;/p&gt;
+                  &lt;/body&gt;
+                &lt;/html&gt;
+</pre>
+<p>Save and close the file.
+</p>
+<p>Now, when we re-run the playbook, Ansible will check each task. It will see that Nginx is already installed on the host, so it will leave it be. It will see the new task section and replace the default index.html file with the one from our server.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_7">Registering Results</a></h3>
+
+<p>When you are installing and configuring services manually, it is almost always necessary to know whether your actions were successful or not. We can cook this functionality into our playbooks by using "register".
+</p>
+<p>For each task, we can optionally register its result (failure or success) in a variable that we can check later on.
+</p>
+<p>When using this functionality, we also have to tell Ansible to ignore errors for that task, since normally it aborts the playbook execution for that host if any trouble happens.
+</p>
+<p>So, if we want to check whether a task has failed or not to decide on subsequent steps, we can use the register functionality.
+</p>
+<p>For instance, we could tell our playbook to upload an index.php file if it exists. If that task fails, we could instead try to upload an index.html file. We will check for the failure condition in the other task because we only want to upload the HTML file if the PHP file fails:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+
+                        - name: Upload default index.php for host
+                          copy: src=static_files/index.php dest=/usr/share/nginx/www/ mode=0644
+                          register: php
+                          ignore_errors: True
+
+                        - name: Remove index.html for host
+                          command: rm /usr/share/nginx/www/index.html
+                          when: php|success
+
+                        - name: Upload default index.html for host
+                          copy: src=static_files/index.html dest=/usr/share/nginx/www/ mode=0644
+                          when: php|failed
+
+                  handlers:
+                        - name: start nginx
+                          service: name=nginx state=started
+</pre>
+<p>Note: We have not configured our host to handle PHP files at this time, so even if you did upload a PHP file, it would not be processed correctly.
+</p>
+<p>This new version tries to upload a PHP index file to the host. It registers the success of the operation into a variable called "php".
+</p>
+<p>If this operation was successful, the task to remove the index.html file is run next.
+</p>
+<p>If the operation failed, the index.html file is uploaded instead.
+</p>
+<p>Conclusion
+</p>
+<p>Now, you should have a good handle on how to automate complex tasks using Ansible. This is a basic example of how you can begin to build your configuration library.
+</p>
+<p>Combining host and group definitions as we learned about in the first tutorial, and using available variables to fill in information, we can begin to put together complex computer systems that interact with each other. In a future article, we will discuss how to implement variables into our playbooks and create roles to help manage complex tasks.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.2.8"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_2_8">Comments</a></h3>
+
+<p>March 17, 2014
+</p>
+<p>According to the ansible docs(<a href="http://docs.ansible.com/apt_module.html">http://docs.ansible.com/apt_module.html</a>) the command equivalent to apt-get update is actually update_cache=yes rather than update_cache=true Otherwise, I like the tutorial.
+</p>
 
 </body>
 </html>
