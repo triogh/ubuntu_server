@@ -1,0 +1,4 @@
+---
+- hosts: test_machine
+  roles:
+    - role: nginx
