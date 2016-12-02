@@ -1,0 +1,48 @@
+Fri Dec  2 19:31:06 CET 2016
+
+$ ansible-galaxy init test_role
+
+
+$ ls -1 test_role
+defaults
+files
+handlers
+meta
+README.md
+tasks
+templates
+tests
+vars
+
+
+$ ls -1 test_role/*
+test_role/README.md
+
+test_role/defaults:
+main.yml
+
+test_role/files:
+
+test_role/handlers:
+main.yml
+
+test_role/meta:
+main.yml
+
+test_role/tasks:
+main.yml
+
+test_role/templates:
+
+test_role/tests:
+inventory
+test.yml
+
+test_role/vars:
+main.yml
+
+
+$ cat test_role/tasks/main.yml 
+---
+# tasks file for test_role
+
