@@ -1,0 +1,19 @@
+---
+- name: Installs nginx web server
+  become: True
+  apt: pkg=nginx state=installed update_cache=true
+  notify:
+    - start nginx
+
+- name: Upload default index.php for host
+  copy: src=index.php dest=/usr/share/nginx/www/ mode=0644
+  register: php
+  ignore_errors: True
+
+- name: Remove index.html from host
+  command: rm /usr/share/nginx/www/index.html
+  when: php|success
+
+- name: Upload default index.html for host
+  copy: src=index.html dest=/usr/share/nginx/www/ mode=0644
+  when: php|failed

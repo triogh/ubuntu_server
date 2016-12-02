@@ -69,6 +69,29 @@
                <li><a href="#h-1.2.8">Comments</a></li>
             </ul>
          </li>
+         <li><a href="#h-1.3">Title: how-to-use-ansible-roles-to-abstract-your-infrastructure-environment</a>
+            <ul>
+               <li><a href="#h-1.3.1">Introduction</a></li>
+               <li><a href="#h-1.3.2">What is an Ansible Role?</a></li>
+               <li><a href="#h-1.3.3">Creating Role Framework</a>
+                  <ul>
+                     <li><a href="#h-1.3.3.1">mkdir roles</a></li>
+                     <li><a href="#h-1.3.3.2">mkdir nginx</a></li>
+                     <li><a href="#h-1.3.3.3">mkdir files handlers meta templates tasks vars</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.3.4">Abstracting a Playbook to a Role</a></li>
+               <li><a href="#h-1.3.5">Creating the Tasks main.yml File</a></li>
+               <li><a href="#h-1.3.6">Creating the Handlers main.yml File</a></li>
+               <li><a href="#h-1.3.7">Finishing Up</a></li>
+               <li><a href="#h-1.3.8">Create a Skeleton Playbook</a>
+                  <ul>
+                     <li><a href="#h-1.3.8.1">$ ansible-playbook play.yml</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.3.9">Comments</a></li>
+            </ul>
+         </li>
       </ul>
    </li>
 </ul>
@@ -843,6 +866,359 @@ Second works on the example playbook given above, and translates it to JSON, but
 <p>March 17, 2014
 </p>
 <p>According to the ansible docs(<a href="http://docs.ansible.com/apt_module.html">http://docs.ansible.com/apt_module.html</a>) the command equivalent to apt-get update is actually update_cache=yes rather than update_cache=true Otherwise, I like the tutorial.
+</p>
+<h2><!-- #BeginTocAnchorNameBegin --><a name="h-1.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3">Title: how-to-use-ansible-roles-to-abstract-your-infrastructure-environment</a></h2>
+<p>Source: <a href="https://www.digitalocean.com/community/tutorials/how-to-use-ansible-roles-to-abstract-your-infrastructure-environment">https://www.digitalocean.com/community/tutorials/how-to-use-ansible-roles-to-abstract-your-infrastructure-environment</a>
+</p>
+<p>Added: Fri Dec  2 16:00:35 CET 2016<br/>
+Created: PostedFebruary 11, 2014
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_1">Introduction</a></h3>
+
+<p>Ansible is an easy to use configuration management system that can assist you in configuring large numbers of servers from a single machine. You can automate complex tasks and easily add machines to your infrastructure without too much trouble.
+</p>
+<p>In previous articles, we discussed how to install and configure Ansible and how to create playbooks to automate system configuration. In this guide, we will discuss how to use Ansible roles to allow you to break up configuration into more modular steps.
+</p>
+<p>We will assume that you have Ansible installed on one Ubuntu 12.04 VPS as we demonstrated in the previous guides. You will also need one or more other computers configured as hosts within the Ansible configuration.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_2">What is an Ansible Role?</a></h3>
+
+<p>You've been exposed to how Ansible can interact with configured clients from the command line with the ansible command, and how you can automate configuration with playbooks run through the ansible-playbook command. Where do roles fit into this scheme?
+</p>
+<p>Simply put, roles are a further level of abstraction that can be useful for organizing playbooks. As you add more and more functionality and flexibility to your playbooks, they can become unwieldy and difficult to maintain as a single file. Roles allow you to create very minimal playbooks that then look to a directory structure to determine the actual configuration steps they need to perform.
+</p>
+<p>Organizing things into roles also allows you to reuse common configuration steps between different types of servers. This is already possible by "including" other files within a playbook, but with roles, these types of links between files are automatic based on a specific directory hierarchy.
+</p>
+<p>In general, the idea behind roles is to allow you to define what a server is supposed to do, instead of having to specify the exact steps needed to get a server to act a certain way.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_3">Creating Role Framework</a></h3>
+
+<p>In order for Ansible to correctly handle roles, we need to build a directory structure that it can find and understand. We can do this by creating a "roles" directory in our working directory for Ansible.
+</p>
+<p>We're assuming here that you've been using your user's home directory as the Ansible working directory. You should change to whatever actual directory you are keeping your Ansible configuration in.
+</p>
+<p>We are going to create a directory called "roles" where Ansible will look for our roles.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.3.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_3_1">mkdir roles</a></h4>
+
+<pre>
+        #
+        cd ~
+        mkdir roles
+        cd roles
+</pre>
+<p>Within this directory, we will define our roles. We will basically create a directory for each role that we will create. Since we are going to replicate our Nginx playbook, let's create an Nginx role:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.3.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_3_2">mkdir nginx</a></h4>
+
+<pre>
+                #
+                mkdir nginx
+                cd nginx
+</pre>
+<p>Within this directory, we create another set of directories that will help us separate the different sections of a normal playbook. Create these directories now:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.3.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_3_3">mkdir files handlers meta templates tasks vars</a></h4>
+
+<pre>
+                #
+                mkdir files handlers meta templates tasks vars
+</pre>
+<p>These are the directories that will contain all of the code to implement our configuration. You may not use all of the directories, so in real practice, you may not need to create all of these directories.
+</p>
+<p>This is what they are all for:
+</p>
+<ul>
+  <li>files: This directory contains regular files that need to be transferred to the hosts you are configuring for this role. This may also include script files to run.
+  </li><li>handlers: All handlers that were in your playbook previously can now be added into this directory.
+  </li><li>meta: This directory can contain files that establish role dependencies. You can list roles that must be applied before the current role can work correctly.
+  </li><li>templates: You can place all files that use variables to substitute information during creation in this directory.
+  </li><li>tasks: This directory contains all of the tasks that would normally be in a playbook. These can reference files and templates contained in their respective directories without using a path.
+  </li><li>vars: Variables for the roles can be specified in this directory and used in your configuration files.
+</li></ul>
+<p>Within all of the directories but the "files" and "templates", if a file called main.yml exists, its contents will be automatically added to the playbook that calls the role.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_4">Abstracting a Playbook to a Role</a></h3>
+
+<p>For many playbooks, it would make more sense to implement the functionality as a role. We can turn our Nginx playbook from the last article into a role to organize things better.
+</p>
+<p>We should already have the roles/nginx/{subdirectories} structure set up from the last section. Now, we need to create some main.yml files in our structure.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_5">Creating the Tasks main.yml File</a></h3>
+
+<p>We'll start with the tasks subdirectory. Move to that directory now:
+</p>
+<pre>
+                #
+                cd ~/roles/nginx/tasks
+</pre>
+<p>Now, we need to copy the nginx.yml file into this directory:
+</p>
+<pre>
+                #
+                cp ~/nginx.yml main.yml
+</pre>
+<p>Now, we need to edit the main file and remove everything that is not a tasks:
+</p>
+<pre>
+                #
+                nano main.yml
+</pre>
+<p>The file should look like this when you begin:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+
+                        - name: Upload default index.php for host
+                          copy: src=static_files/index.php dest=/usr/share/nginx/www/ mode=0644
+                          register: php
+                          ignore_errors: True
+
+                        - name: Remove index.html for host
+                          command: rm /usr/share/nginx/www/index.html
+                          when: php|success
+
+                        - name: Upload default index.html for host
+                          copy: src=static_files/index.html dest=/usr/share/nginx/www/ mode=0644
+                          when: php|failed
+
+                  handlers:
+                        - name: start nginx
+                          service: name=nginx state=started
+</pre>
+<p>We only want to keep the lines that are red. 
+</p>
+<pre>
+                #
+                - name: Installs nginx web server
+                  apt: pkg=nginx state=installed update_cache=true
+                  notify:
+                        - start nginx
+
+                - name: Upload default index.php for host
+                  copy: src=static_files/index.php dest=/usr/share/nginx/www/ mode=0644
+                  register: php
+                  ignore_errors: True
+
+                - name: Remove index.html for host
+                  command: rm /usr/share/nginx/www/index.html
+                  when: php|success
+
+                - name: Upload default index.html for host
+                  copy: src=static_files/index.html dest=/usr/share/nginx/www/ mode=0644
+                  when: php|failed
+</pre>
+<p>Furthermore, we can remove the extraneous spaces to the left of our tasks. After our changes, our new tasks/main.yml file will look like this:
+</p>
+<pre>
+                #
+                #
+                ---
+                - name: Installs nginx web server
+                  apt: pkg=nginx state=installed update_cache=true
+                  notify:
+                        - start nginx
+
+                - name: Upload default index.php for host
+                  copy: src=static_files/index.php dest=/usr/share/nginx/www/ mode=0644
+                  register: php
+                  ignore_errors: True
+
+                - name: Remove index.html for host
+                  command: rm /usr/share/nginx/www/index.html
+                  when: php|success
+
+                - name: Upload default index.html for host
+                  copy: src=static_files/index.html dest=/usr/share/nginx/www/ mode=0644
+                  when: php|failed
+</pre>
+<p>As you can see, this is a lot easier to read in terms of just recognizing the steps that are to be performed.
+</p>
+<p>One additional change that we should make is how we references external files in our configuration. Our src lines reference a "static_files" directory. This is unnecessary if we place all of our static files in the "files" subdirectory. Ansible will find them automatically.
+</p>
+<p>When we change those lines, our finished tasks/main.yml file looks like this:
+</p>
+<pre>
+                #
+                #
+                ---
+                - name: Installs nginx web server
+                  apt: pkg=nginx state=installed update_cache=true
+                  notify:
+                        - start nginx
+
+                - name: Upload default index.php for host
+                  copy: src=index.php dest=/usr/share/nginx/www/ mode=0644
+                  register: php
+                  ignore_errors: True
+
+                - name: Remove index.html for host
+                  command: rm /usr/share/nginx/www/index.html
+                  when: php|success
+
+                - name: Upload default index.html for host
+                  copy: src=index.html dest=/usr/share/nginx/www/ mode=0644
+                  when: php|failed
+</pre>
+<p>Save and close the file when you are finished.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_6">Creating the Handlers main.yml File</a></h3>
+
+<p>Now that we have the bulk of the playbook in the tasks/main.yml file, we need to move the handlers section into a file located at handlers/main.yml.
+</p>
+<p>Copy the nginx.yml file again, this time into the handlers directory:
+</p>
+<pre>
+                #
+                cd ~/roles/nginx/handlers
+                cp ~/nginx.yml main.yml
+</pre>
+<p>Again, open the file in your text editor:
+</p>
+<pre>
+                #
+                nano main.yml
+</pre>
+<p>The parts that we need to keep are in red again:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  tasks:
+                        - name: Installs nginx web server
+                          apt: pkg=nginx state=installed update_cache=true
+                          notify:
+                                - start nginx
+
+                        - name: Upload default index.php for host
+                          copy: src=static_files/index.php dest=/usr/share/nginx/www/ mode=0644
+                          register: php
+                          ignore_errors: True
+
+                        - name: Remove index.html for host
+                          command: rm /usr/share/nginx/www/index.html
+                          when: php|success
+
+                        - name: Upload default index.html for host
+                          copy: src=static_files/index.html dest=/usr/share/nginx/www/ mode=0644
+                          when: php|failed
+
+                  handlers:
+                        - name: start nginx
+                          service: name=nginx state=started
+</pre>
+<p>Remove the whitespace from before the handlers also. In the end, the file should look like this:
+</p>
+<pre>
+                #
+                #
+                ---
+                - name: start nginx
+                  service: name=nginx state=started
+</pre>
+<p>Save and close the file when you are finished.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_7">Finishing Up</a></h3>
+
+<p>Since our original playbook was very simple, we're almost done.
+</p>
+<p>First, we need to move the index.html page (and the index.php page if you created one) out of the ~/static_files directory and put them into the ~/roles/nginx/files directory:
+</p>
+<pre>
+                #
+                cp ~/static_files/* ~/roles/nginx/files
+</pre>
+<p>If our role depended on another role, we could add a file in the meta directory called main.yml. This file might specify that this role depends on a role called "apt".
+</p>
+<p>If our role depended on a role called "apt", the file at ~/roles/nginx/meta/main.yml might look like this:
+</p>
+<pre>
+                #
+                #
+                ---
+                dependencies:
+                  - { role: apt }
+</pre>
+<p>This would take the "apt" role and place the information from that role before our Nginx information so that our role has its proper dependencies prior to starting.
+</p>
+<p>We said earlier that there is a "vars" directory that can be used to set variables for our role. While it is possible to configure default parameters for a role through a vars/main.yml file, this is usually not recommended, because it makes the details of your configuration reside within the roles hierarchy.
+</p>
+<p>Usually, you want to specify your details outside of the role so that you can easily share the role structure without worrying about leaking information. Also, variables declared within a role are easily overridden by variables in other locations, so they are not very strong to begin with.
+</p>
+<p>By now, you may be wondering why we have to organize our information into directories, when most of our directories only contain a single main.yml file. Why aren't we creating tasks.yml files instead of tasks/main.yml?
+</p>
+<p>The answer is that we are only using the minimum amount of files. The main.yml files are the ones picked up automatically by Ansible, but we can include additional files easily by using the include functionality.
+</p>
+<p>If we had an additional task file used to configure SSL for some of our hosts located at tasks/ssl.yml, we could call it like this:
+</p>
+<pre>
+                #
+                #
+                . . .
+                tasks:
+                  - include: roles/nginx/tasks/ssl.yml
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.8"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_8">Create a Skeleton Playbook</a></h3>
+
+<p>Now that we have configured our role structure, we can call all of the functionality with a very simple playbook.
+</p>
+<p>This allows us to use playbooks to declare what a server is supposed to do, not what steps must happen to make it behave how we want it to.
+</p>
+<p>Outside of the entire role structure, in our working directory (our home directory in this example), we can create a playbook file.
+</p>
+<pre>
+                #
+                cd ~
+                nano play.yml
+</pre>
+<p>Inside of this file, we need very little information. First, we have not defined any hosts, so that goes here. Next, we just declare the role we are using:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: droplets
+                  roles:
+                        - role: nginx
+</pre>
+<p>Save and close the file. This is our entire playbook. As you can see, it cleans everything up and allows us to concentrate on core functionality. If we had multiple roles configured, we could simply list what different things we want our server to do.
+</p>
+<p>For instance, if we had roles to set up a WordPress server, we might have a playbook that looks like this:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: wordpress_hosts
+                  roles:
+                        - nginx
+                        - php
+                        - mysql
+                        - wordpress
+</pre>
+<p>As you can see, this allows us to be very succinct about what we want from a server. Since in the end, we use a playbook to call a role, the command syntax is exactly the same:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.8.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_8_1">$ ansible-playbook play.yml</a></h4>
+
+<p>Conclusion
+</p>
+<p>Ansible roles are an optional feature to take advantage of, but if you plan on using Ansible extensively, it is highly recommended that you explore this functionality. Not only will it keep your host-level configuration clean and readable, it will also allow you to easily reuse code and implement your changes in a modular fashion.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.3.9"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_3_9">Comments</a></h3>
+
+<p>February 28, 2014
+</p>
+<p>Great article, but you are missing "defaults" directory in which you can add default values for variables which basically get overridden by everything else. 
 </p>
 
 </body>
