@@ -1551,3 +1551,292 @@ So, add the following to the file:
 Our role has one more tasks file. As Drupal needs its own MySQL database and database user, we will create a separate tasks file to create them. Use nano to create and edit a file named create_db.yml.
 
 
+		#
+		nano ~/MyPlaybooks/drupal_setup/roles/mysql/tasks/create_db.yml
+
+
+Ansible has modules that let you manage MySQL. In this task, we will use the following modules:
+
+
+    - mysql_db - To create a new database for Drupal.
+    - mysql_user To create a new user and allow it to access the database.
+
+
+Before we use mysql_db or mysql_user we should make sure that the Python MySQLdb package is installed on the remote host. Use the apt module to install it.
+
+Add the following contents to the file:
+
+
+		#
+		#
+		---
+		- name: Install Python MySQLdb
+		  apt: name=python-mysqldb state=latest
+
+		- name: Create the Drupal database
+		  mysql_db: db={{ db_name }} state=present
+
+		- name: Create the Drupal user
+		  mysql_user: >
+			name={{ db_user }}
+			password={{ db_password }}
+			priv={{ db_name }}.*:ALL
+			host=localhost
+
+
+Note that strings enclosed in {{ }} denote variables. In this task, we have the variables {{ db_user }}, {{ db_password}} and {{ db_name }}. We are going to set the values of these variables in a later step.
+
+Next, we need to let Ansible know that this role has two tasks. To do this, we create a main.yml file.
+
+
+		#
+		nano ~/MyPlaybooks/drupal_setup/roles/mysql/tasks/main.yml
+
+
+Add the following code to this file:
+
+
+		#
+		#
+		---
+		- include: setup.yml
+		- include: create_db.yml
+
+
+Step 7  Create a Role to Install Drupal
++++
+
+It's now time to move on to the installation of Drupal itself.
+
+Create directories for this role and its tasks.
+
+
+		#
+		mkdir -p ~/MyPlaybooks/drupal_setup/roles/drupal/tasks
+
+
+Use nano to create and edit a task file named main.yml.
+
+
+		#
+		nano ~/MyPlaybooks/drupal_setup/roles/drupal/tasks/main.yml
+
+
+In this task, we will tell Ansible to perform the following actions:
+
+
+
+    - Install git on the remote host. This is necessary because we will be using Ansible's git module
+    - Use Ansible's git module to clone the latest stable version of Drupal from its repository at http://git.drupal.org/project/drupal.git. The downloaded files are placed in /var/www/html/drupal
+    - Create the settings.php and services.yml files from the default files
+    - Update the permissions of settings.php, services.yml, and sites/default/files
+
+
+Add the following code to the file:
+
+
+		#
+		#
+		---
+
+		- name: Install git
+		  apt: name=git state=latest
+
+		- name: Clone Drupal
+		  git: >
+			repo=http://git.drupal.org/project/drupal.git
+			dest=/var/www/html/drupal/
+			update=no
+
+		- name: Create settings.php
+		  command: cp /var/www/html/drupal/sites/default/default.settings.php /var/www/html/drupal/sites/default/settings.php
+
+		- name: Create services.yml
+		  command: cp /var/www/html/drupal/sites/default/default.services.yml /var/www/html/drupal/sites/default/services.yml
+
+		- name: Update permissions of settings.php
+		  file: path=/var/www/html/drupal/sites/default/settings.php mode=777
+
+		- name: Update permissions of services.yml
+		  file: path=/var/www/html/drupal/sites/default/services.yml mode=777
+
+		- name: Update permissions of files directory
+		  file: >
+			path=/var/www/html/drupal/sites/default/files
+			mode=777
+			state=directory
+			recurse=yes
+
+
+
+You'll want to update the permissions for these files later after completing the browser installations on each server (on each server, rather than through Ansible).
+
+
+Step 8  Create a File to Use All the Roles
++++
+
+
+At this point, all our roles are ready. We now need to use them.
+
+Use nano to create a file named site.yml. This is the file we will actually run with Ansible.
+
+
+		#
+		nano ~/MyPlaybooks/drupal_setup/site.yml
+
+
+In this file we perform the following activities:
+
+    - Specify the hosts that this Playbook will run on
+    - Specify that sudo should be used to run all tasks of this Playbook
+    - Set default values to variables used in various roles
+    - Run all the roles
+
+Add the following code to it:
+
+
+		#
+		#
+		---
+		- hosts: drupal_hosts
+		  sudo: yes
+		  vars:
+			- db_name: drupal
+			- db_user: drupal_user
+			- db_password: drupal_db_pass
+		  roles:
+			- update
+			- php
+			- mysql
+			- drupal
+
+
+Make sure you change the value of the variable db_password to something other than drupal_db_pass. You are free to change the values of the other two variables as well to match your preferences.
+
+
+Step 9  Establish an SSH Connection
++++
+
+
+Before you run the Playbook, your ~/.ssh/known_hosts file should have an entry for each of the hosts mentioned in the hosts file.
+
+An easy way to do this is to connect once to each server listed in the ~/MyPlaybooks/drupal_setup/hosts file from this server, using SSH.
+
+Connect to localhost via SSH using the command:
+
+
+		#
+		ssh localhost
+
+
+If this is the first time you are connecting to the server this way, you will be prompted with a message that says:
+
+
+		#
+		The authenticity of host 'localhost (127.0.0.1)' can't be established.
+		ECDSA key fingerprint is b1:18:3d:19:15:21:39:5a:f7:9f:3c:37:68:ba:62:01.
+		Are you sure you want to continue connecting (yes/no)?
+
+
+Once you say yes, you will get a message saying:
+
+
+		#
+		Warning: Permanently added 'localhost' (ECDSA) to the list of known hosts.
+
+
+Connect to any other servers listed in the hosts file:
+
+
+		#
+		ssh drupal_sudo_user@drupal_server_ip
+
+
+
+Make sure you replace the username and IP address with the actual information for each server. Please keep in mind that the sudo username (drupal_sudo_user in the example) and password should be the same for each server, including localhost.
+
+    Note: Instead of using passwords, you could copy the SSH public key for the Ansible server's sudo user to the drupal_sudo_user's authorized_keys file on each managed server.
+
+Once you have connected to each server, you are ready to run the playbook.
+
+
+Step 10  Run the Playbook
++++
+
+
+The Playbook is now ready to be tested. Fire it off using the ansible-playbook command. The -k option forces Ansible to ask for the SSH password, and is not necessary if you have set up passwordless authentication. The -K option forces Ansible to ask for the sudo password.
+
+
+		#
+		cd ~/MyPlaybooks/drupal_setup/
+
+
+$ ansible-playbook -i hosts site.yml -kK
+---
+
+
+Step 11  Set Up Drupal
++++
+
+Now, you will be able to use a browser to access Drupal and complete the browser-based installation, at 
+
+
+		#
+		http://your_server_ip/drupal/.
+
+Drupal Setup Page
+
+If you need help with completing the browser installer for Drupal, follow along with the instructions in this article.
+
+Your database settings will be the variables you set in the vars section of the ~/MyPlaybooks/drupal_setup/site.yml file.
+
+Double-check that each server has a successful Drupal installation.
+
+
+
+Step 12  Clean Up the Host List
++++
+
+Now's a good time to remove the hosts from the ~/MyPlaybooks/drupal_setup/hosts file. That way, if you run the playbook again, you won't accidentally overwrite the hosts that you have already set up.
+
+
+Troubleshooting
++++
+
+Note that YAML is whitespace-sensitive. If you are having trouble with your playbook, you probably have improper indentation or extra spaces in your .yml files.
+
+If you see an error that looks like:
+
+
+		#
+		fatal: [server-name] => Using a SSH password instead of a key is not possible because Host Key checking is enabled and sshpass does not support this.  Please add this host's fingerprint to your known_hosts file to manage this host.
+
+
+
+This means you missed adding an entry for one or more hosts in the ~/.ssh/known_hosts file.
+
+You'll need to make a manual SSH connection to localhost or to the target remote server first. Then try running the playbook again.
+
+
+
+Conclusion
+
+
+With this tutorial, you have learned to create an Ansible playbook that sets up Drupal for you, along with Apache and MySQL. Before you use this playbook in production systems, you will have to further build on it to make the installation more secure. You could also use Drush commands in the playbook to manage the Drupal installation.
+
+
+Comments
++++
+
+December 5, 2015
+
+using ansible-galaxy to generate your role folders and their sub folders makes this way easier than creating each by hand... it can simply generate a role and all subfolders with a command like:
+
+
+$ ansible-galaxy init drupal
+---
+or
+
+$ ansible-galaxy init mysql
+---
+
