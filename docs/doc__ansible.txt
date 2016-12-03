@@ -1840,3 +1840,779 @@ or
 $ ansible-galaxy init mysql
 ---
 
+
+
+
+Title: how-to-configure-apache-using-ansible-on-ubuntu-14-04
+===
+Source: https://www.digitalocean.com/community/tutorials/how-to-configure-apache-using-ansible-on-ubuntu-14-04
+
+Added: Sat Dec  3 14:04:12 CET 2016
+Created: PostedFebruary 18, 2015
+
+
+Introduction
++++
+
+Apache is one of the most popular web servers currently used on the Internet. It is easy to set up and configure on Linux distributions like Ubuntu and Debian, as it comes in the package repositories and includes a default configuration that works out of the box.
+
+
+Ansible is an automation tool that allows you to remotely configure systems, install software, and perform complex tasks across a large fleet of servers without needing to manually log into each. Unlike other alternatives, Ansible is installed on a single host, which can even be your local machine, and uses SSH to communicate with each remote host. This allows it to be incredibly fast at configuring new servers, as there are no prerequisite packages to be installed on each new server. It is incredibly easy to use and understand, since it uses playbooks in yaml format using a simple module based syntax.
+
+
+Prerequisites
++++
+
+For this tutorial, we will install Ansible on a new Ubuntu 14.04 master Droplet and use it to configure Apache on a second Droplet. That said, keep in mind that one of the benefits of Ansible is that you can have it installed on your local machine and manage other hosts without needing to manually ssh into them.
+
+For this tutorial, you will need:
+
+    - Two Ubuntu 14.04 Droplets: one master Droplet with Ansible and one secondary Droplet which will run Apache configured through Ansible
+    - Sudo non-root users for both Droplets.
+    - Ansible installed on the master Droplet. Follow this tutorial (up to the Set Up SSH Keys section). Although that tutorial was written for Ubuntu 12.04, it is still relevant for Ubuntu 14.04.
+    - SSH keys for the master Droplet to authorize login on the secondary Droplet, which you can do following this tutorial on the master Droplet.
+    - Active DNS records, or manually set up a local hosts file on your local machine (using your secondary Droplet's IP address), in order to set up and use the Virtual Hosts that will be configured.
+
+
+
+
+Note: This tutorial follows the concepts explained in the existing tutorial:
+How To Configure the Apache Web Server on an Ubuntu or Debian VPS. Please review that tutorial if you would like more information, or would like to review the manual process alongside the Ansible process.
+
+
+Step 1  Configuring Ansible
++++
+
+In this section we will configure Ansible to be able to manage your server.
+
+The first step, once Ansible is installed, is to tell Ansible which hosts to talk to. To do this, we need to create an Ansible hosts file. The Ansible hosts file contains groups of hosts, which we refer to when running Ansible commands. By default this is located in /etc/ansible/hosts. However, that is applied globally across your system and often requires admin permissions. Instead, to make things simpler, we need to tell Ansible to use a local hosts file.
+
+
+Ansible always looks for an ansible.cfg file in the local directory that it is being run from, and if found will override the global configuration with the local values. With this in mind, all we need to do is tell Ansible that we want to use a hosts file in the local directory, rather than the global one.
+
+Create a new directory (which we will use for the rest of this tutorial).
+
+
+		#
+		mkdir ansible-apache
+
+Move into the new directory.
+
+
+		#
+		cd ~/ansible-apache/
+
+
+Create a new file called ansible.cfg and open it for editing.
+
+
+		#
+		nano ansible.cfg
+
+
+Within that file, we want to add in the hostfile configuration option with the value of hosts, within the [defaults] group. Copy the following into the ansible.cfg file, then save and close it.
+
+
+		#
+		[defaults]
+		hostfile = hosts
+
+
+Next, the hosts file needs to be written. There are a lot of options available for the hosts file. However, we can start with something very simple.
+
+Create a hosts file and open it for editing.
+
+
+		#
+		nano hosts
+
+Copy the following into the hosts file.
+
+
+		#
+		[apache]
+		secondary_server_ip ansible_ssh_user=username
+
+
+This specifies a host group called apache which contains one host. Replace secondary_server_ip with the secondary server's hostname or IP address, and username with your SSH username. Now Ansible should be able to connect to your server.
+
+Note: The ansible_ssh_user=username component is optional if you are running Ansible as the same user as the target host.
+
+
+To test that Ansible is working and can talk to your host, you can run a basic ansible command. Ansible comes with a lot of default modules, but a good place to start is the ping module. It checks it can connect to each host, which makes checking the hosts file for correctness easy.
+
+Basic usage of the ansible command accepts the host group, and the module name: ansible <group> -m <module>. To run the ping command, enter the following command.
+
+
+$ ansible apache -m ping
+---
+
+The output should look like this:
+
+
+		#
+		111.111.111.111 | success >> {
+			"changed": false,
+			"ping": "pong"
+		}
+
+
+
+Another Ansible module that is useful for testing is the command module. It runs custom commands on the host and returns the results. To run the command command using echo, a Unix command that echoes a string to the terminal, enter the following command.
+
+
+$ ansible apache -m command -a "/bin/echo hello sammy"
+---
+
+
+The output should look like this:
+
+
+		#
+		111.111.111.111 | success | rc=0 >>
+		hello sammy
+
+
+This is basic usage of Ansible. The real power comes from creating playbooks containing multiple Ansible tasks. We will cover those next.
+
+
+
+Step 2  Creating a Playbook
++++
+
+In this section we will create a basic Ansible playbook to allow you to run more complicated modules easily.
+
+A very basic Ansible playbook is a single yaml file which specifies the host group and one or more tasks to be run on the hosts within the specified group. They are quite simple and easy to read, which is one of the reasons why Ansible is so powerful.
+
+Let's create a basic playbook version of the hello sammy command above.
+
+Create a file called apache.yml and open it for editing.
+
+
+		#
+		nano apache.yml
+
+
+Copy the following text into the file, then save and close it.
+
+
+		#
+		#
+		---
+		- hosts: apache
+		  tasks:
+			- name: run echo command
+			  command: /bin/echo hello sammy
+
+
+
+The hosts: apache declaration is at the top, which tells Ansible that we are using the apache hosts group. This is the equivalent of passing it via the ansible command. Next there is a list of tasks. In this example, we have one task with the name run echo command. This is simply a description intended for the user to understand what the task is doing. Finally, the command: /bin/echo hello sammy line runs the command module with the arguments /bin/echo hello sammy.
+
+
+
+The ansible-playbook command is used to run playbooks, and the simplest usage is: ansible-playbook your-playbook.yml. We can run the playbook we just created with the following command.
+
+
+$ ansible-playbook apache.yml
+---
+
+The output should look like this.
+
+
+		#
+		PLAY [apache] *****************************************************************
+
+		GATHERING FACTS ***************************************************************
+		ok: [111.111.111.111]
+
+		TASK: [run echo command] ******************************************************
+		changed: [111.111.111.111]
+
+		PLAY RECAP ********************************************************************
+		111.111.111.111            : ok=2    changed=1    unreachable=0    failed=0
+
+
+
+The most important thing to notice here is that playbooks do not return the output of the module, so unlike the direct command we used in Step 1, we cannot see if hello sammy was actually printed. This means that playbooks are better suited for tasks where you don't need to see the output. Ansible will tell you if there was an error during the execution of a module, so you generally only need to rely on that to know if anything goes wrong.
+
+
+Step 3  Installing Apache
++++
+
+
+Now that we have introduced playbooks, we will write the task to install the Apache web server.
+
+Normally on Ubuntu, installing Apache is a simple case of installing the apache2 package via apt-get. To do this via Ansible, we use Ansible's apt module. The apt module contains a number of options for specialised apt-get functionality. The options we are interested in are:
+
+    - name: The name of the package to be installed, either a single package name or a list of packages.
+    - state: Accepts either latest, absent, or present. Latest ensures the latest version is installed, present simply checks it is installed, and absent removes it if it is installed.
+    - update_cache: Updates the cache (via apt-get update) if enabled, to ensure it is up to date.
+
+Note: Package managers other than apt have modules too. Each module page has examples that usually cover all of the main use cases, making it very easy to get a feel for how to use each module. It is rare to have to look elsewhere for usage instructions.
+
+Now let's update our apache.yml playbook with the apt module instead of the command module. Open up the apache.yml file for editing again.
+
+
+		#
+		nano apache.yml
+
+Delete the text currently there and copy the following text into it.
+
+
+		#
+		#
+		---
+		- hosts: apache
+		  sudo: yes
+		  tasks:
+			- name: install apache2
+			  apt: name=apache2 update_cache=yes state=latest
+
+
+
+The apt line installs the apache2 package (name=apache2) and ensures we have updated the cache (update_cache=yes). Although it is optional, including state=latest to be explicit that it should be installed is a good idea.
+
+Unless your Playbook is running as root on each host, sudo will be required to ensure the right privileges. Ansible supports sudo as part of a simple option within the Playbook. It can also be applied via the ansible-playbook command and on a per-task level.
+
+
+Now run the playbook.
+
+$ ansible-playbook apache.yml --ask-sudo-pass
+---
+
+
+The --ask-sudo-pass flag will prompt you for the sudo password on the secondary Droplet. This is necessary because the installation requires root privileges; the other commands we've run so far did not.
+
+The output should look like this.
+
+
+		#
+		PLAY [apache] *****************************************************************
+
+		GATHERING FACTS ***************************************************************
+		ok: [111.111.111.111]
+
+		TASK: [install apache2] *******************************************************
+		changed: [111.111.111.111]
+
+		PLAY RECAP ********************************************************************
+		111.111.111.111            : ok=2    changed=1    unreachable=0    failed=0
+
+
+
+If you visit your secondary server's hostname or IP address in your browser, you should now get a Apache2 Ubuntu Default Page to greet you. This means you have a working Apache installation on your server, and you haven't manually connected to it to run a command yet.
+
+An important concept to note at this point is idempotence, which underlies how Ansible modules are supposed to behave. The idea is that you can run the same command repeatedly, but if everything was configured on the first run, then all subsequent runs make no changes. Almost all Ansible modules support it, including the apt module.
+
+For example, run the same playbook command again.
+
+
+The output should look like this. Note the changed=0 section.
+
+
+		#
+		PLAY [apache] *****************************************************************
+
+		GATHERING FACTS ***************************************************************
+		ok: [111.111.111.111]
+
+		TASK: [install apache2] *******************************************************
+		ok: [111.111.111.111]
+
+		PLAY RECAP ********************************************************************
+		111.111.111.111            : ok=2    changed=0    unreachable=0    failed=0
+
+
+
+
+This tells you that the apache2 package was already installed, so nothing was changed. When dealing with complicated playbooks across many hosts, being able to identify the hosts that were different becomes very useful. For example, if you notice a host always needs a specific config updated, then there is likely a user or process on that host which is changing it. Without idempotence, this may never be noticed.
+
+
+Step 4  Configuring Apache Modules
++++
+
+Now that Apache is installed, we need to enable a module to be used by Apache.
+
+Let us make sure that the mod_rewrite module is enabled for Apache. Via SSH, this can be done easily by using a2enmod and restarting Apache. However, we can also do it very easily with Ansible using the apache2_module module and a task handler to restart apache2.
+
+The apache2_module module takes two options:
+
+     - name  The name of the module to enable, such as rewrite.
+     - state  Either present or absent, depending on if the module needs to be enabled or disabled.
+
+Open apache.yml for editing.
+
+
+Update the file to include this task. The file should now look like this:
+
+
+		#
+		#
+		---
+		- hosts: apache
+		  sudo: yes
+		  tasks:
+			- name: install apache2
+			  apt: name=apache2 update_cache=yes state=latest
+
+			- name: enabled mod_rewrite
+			  apache2_module: name=rewrite state=present
+
+
+However, we need to restart apache2 after the module is enabled. One option is to add in a task to restart apache2, but we don't want that to run every time we apply our playbook. To get around this, we need to use a task handler. The way handlers work is that a task can be told to notify a handler when it has changed, and the handler only runs when the task has been changed.
+
+To do this we need to add the notify option into the apache2_module task, and then we can use the service module to restart apache2 in a handler.
+
+
+That results in a playbook that looks like this:
+
+
+		#
+		#
+		---
+		- hosts: apache
+		  sudo: yes
+		  tasks:
+			- name: install apache2
+			  apt: name=apache2 update_cache=yes state=latest
+
+			- name: enabled mod_rewrite
+			  apache2_module: name=rewrite state=present
+			  notify:
+				- restart apache2
+
+		  handlers:
+			- name: restart apache2
+			  service: name=apache2 state=restarted
+
+
+Now, rerun the playbook.
+
+
+$ ansible-playbook apache.yml --ask-sudo-pass
+---
+
+The output should look like:
+
+
+
+		#
+		PLAY [apache] *****************************************************************
+
+		GATHERING FACTS ***************************************************************
+		ok: [111.111.111.111]
+
+		TASK: [install apache2] *******************************************************
+		ok: [111.111.111.111]
+
+		TASK: [enabled mod_rewrite] ***************************************************
+		changed: [111.111.111.111]
+
+		NOTIFIED: [restart apache2] ***************************************************
+		changed: [111.111.111.111]
+
+		PLAY RECAP ********************************************************************
+		111.111.111.111            : ok=4    changed=2    unreachable=0    failed=0
+
+
+
+It looks good so far. Now, run the command again and there should be no changes, and the restart task won't be listed.
+
+
+
+
+Step 5  Configuring Apache Options
++++
+
+Now that we have a working Apache installation, with our required modules turned on, we need to configure Apache.
+
+By default Apache listens on port 80 for all HTTP traffic. For the sake of the tutorial, let us assume that we want Apache to listen on port 8081 instead. With the default Apache configuration on Ubuntu 14.04 x64, there are two files that need to be updated:
+
+
+		#
+		/etc/apache2/ports.conf
+			Listen 80
+
+		#
+		/etc/apache2/sites-available/000-default.conf
+			<VirtualHost *:80>
+
+
+To do this, we can use the lineinfile module. This module is incredibly powerful and through the use of it's many different configuration options, it allows you to perform all sorts of changes to an existing file on the host. For this example, we will use the following options:
+
+
+
+    - dest  The file to be updated as part of the command.
+    - regexp  Regular Expression to be used to match an existing line to be replaced.
+    - line  The line to be inserted into the file, either replacing the regexp line or as a new line on the end.
+    - state  Either present or absent.
+
+
+Note: The lineinfile module will append the line on the end of the file if it doesn't match an existing line with the regexp. The options insertbefore and insertafter can specify lines to add it before or after instead of at the end, if needed.
+
+What we need to do to update the port from 80 to 8081 is look for the existing lines which define port 80, and change them to define port 8081. 
+
+
+Open the apache.yml file for editing.
+
+
+Amend the additional lines so that the file looks like this:
+
+
+		#
+		#
+		---
+		- hosts: apache
+		  sudo: yes
+		  tasks:
+			- name: install apache2
+			  apt: name=apache2 update_cache=yes state=latest
+
+			- name: enabled mod_rewrite
+			  apache2_module: name=rewrite state=present
+			  notify:
+				- restart apache2
+
+			- name: apache2 listen on port 8081
+			  lineinfile: dest=/etc/apache2/ports.conf regexp="^Listen 80" line="Listen 8081" state=present
+			  notify:
+				- restart apache2
+
+			- name: apache2 virtualhost on port 8081
+			  lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^<VirtualHost \*:80>" line="<VirtualHost *:8081>" state=present
+			  notify:
+				- restart apache2
+
+		  handlers:
+			- name: restart apache2
+			  service: name=apache2 state=restarted
+
+
+It is important to notice that we also need to restart apache2 as part of this process, and that we can re-use the same handler but the hanlder will only be triggered once despite multiple changed tasks.
+
+
+Now run the playbook.
+
+
+$ ansible-playbook apache.yml --ask-sudo-pass
+---
+
+
+Once Ansible has finished, you should be able to visit your host in your browser and it will respond on port 8081, rather than port 80. In most web browsers, this can be easily achieved by adding :port onto the end of the URL: http://111.111.111.111:8081/.
+
+
+The lineinfile module is very powerful, and makes mangling existing configurations really easy. The only catch is that you need to know what to expect in the files you are changing with it, but it supports a wide variety of options that support most simple use cases.
+
+
+Step 6  Configuring Virtual Hosts
++++
+
+Ansible features a couple of modules that provide the ability to copy a local (to Ansible) template file onto the hosts. The two most commonly used modules for this purpose are the copy module and the template module. The copy module copies a file as-is and makes no changes to it, whereas the more powerful template module copies across a template and applies variable substitution to areas you specify by using double curly brackets (i.e. {{ variable }}).
+
+In this section we will use the template module to configure a new virtual host on your server. There will be a lot of changes, so we'll explain them piece by piece, and include the entire updated apache.yml file at the end of this step.
+
+
+Create Virtual Host Configuration
+---
+
+The first step is to create a new virtual host configuration. We'll create the virtual host configuration file on the master Droplet and upload it to the secondary Droplet using Ansible.
+
+Here's an example of a basic virtual host configuration which we can use as a starting point for our own configuration. Notice that both the port number and the domain name, hilighted below, are hardcoded into the configuration.
+
+
+		#
+		#
+		<VirtualHost *:8081>
+			ServerAdmin webmaster@example.com
+			ServerName example.com
+			ServerAlias www.example.com
+			DocumentRoot /var/www/example.com
+			ErrorLog ${APACHE_LOG_DIR}/error.log
+			CustomLog ${APACHE_LOG_DIR}/access.log combined
+		</VirtualHost>
+
+
+
+Create a new file called virtualhost.conf.
+
+
+		#
+		nano virtualhost.conf
+
+
+Paste the following into virtualhost.conf. Because we are using templates, it is a good idea to change the hard coded values above to variables, to make them easy to change in the future.
+
+
+		#
+		<VirtualHost *:{{ http_port }}>
+			ServerAdmin webmaster@{{ domain }}
+			ServerName {{ domain }}
+			ServerAlias www.{{ domain }}
+			DocumentRoot /var/www/{{ domain }}
+			ErrorLog ${APACHE_LOG_DIR}/error.log
+			CustomLog ${APACHE_LOG_DIR}/access.log combined
+		</VirtualHost>
+
+
+Use Template Variables
+---
+
+Next, we need to update our playbook to push out the template and use the variables.
+
+The first step is to add in a section into the playbook for variables. It is called vars and goes on the same level as hosts, sudo, tasks, and handlers. We need to put in both variables used in the template above, and we will change the port back to 80 in the process.
+
+
+		#
+		#
+		---
+		- hosts: apache
+		  sudo: yes
+		  vars:
+			http_port: 80
+			domain: example.com
+		  tasks:
+			- name: install apache2
+		...
+
+
+
+Variables can be used in tasks and templates, so we can update our existing lineinfile modules to use the specified http_port, rather than the hard coded 8081 we specified before. The variable needs to be added into the line, and the regexp option needs to be updated so it's not looking for a specific port. The changes will look like this:
+
+
+		#
+		lineinfile: dest=/etc/apache2/ports.conf regexp="^Listen " line="Listen {{ http_port }}" state=present
+		lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^<VirtualHost \*:" line="<VirtualHost *:{{ http_port }}>"
+
+
+
+Add Template Module
+---
+
+
+The next step is to add in the template module to push the configuration file onto the host. We will use these options to make it happen:
+
+    - dest The destination file path to save the updated template on the host(s), i.e. /etc/apache2/sites-available/{{ domain }}.conf.
+    - src The source template file, i.e. virtualhost.conf.
+
+
+Applying these to your playbook will result in a task that looks like this:
+
+
+		#
+		- name: create virtual host file
+		  template: src=virtualhost.conf dest=/etc/apache2/sites-available/{{ domain }}.conf
+
+
+
+
+Enable the Virtual Host
+---
+
+Almost done! What we need to do now is enable the virtual host within Apache. This can be done in two ways: by running the sudo a2ensite example.com command or manually symlinking the config file into /etc/apache2/sites-enabled/. The former option is safer, as it allows Apache to control the process. For this, the command module comes in use again.
+
+The usage is quite simple, as we discovered above:
+
+
+		#
+		- name: a2ensite {{ domain }}
+		  command: a2ensite {{ domain }}
+		  notify:
+		  - restart apache2
+
+
+Prevent Extra Work
+---
+
+Finally, the command module needs to know when it should and shouldn't run, so the module is not run unnecessarily if the playbook is run multiple times. In our case, it only needs to be run if the .conf file hasn't been created on the host yet.
+
+This is done using the creates option, which allows you to tell the module what file is being created during the module execution. If the file exists, the module won't run. Because Apache creates a symlink when sites are enabled, checking for that solves the problem.
+
+
+The changes will look like this:
+
+
+		#
+		- name: a2ensite {{ domain }}
+		  command: a2ensite {{ domain }}
+		  args:
+			creates: /etc/apache2/sites-enabled/{{ domain }}.conf
+		  notify:
+		  - restart apache2
+
+
+It is important to note the use of the args section in the task. This is an optional way of listing the module options, and in this case removes any confusion between what is a module option and what is the command itself.
+
+
+Final apache.yml Playbook
++++
+
+With all of the changes above, change your apache.yml playbook to look like this.
+
+
+		#
+		#
+		---
+		- hosts: apache
+		  sudo: yes
+		  vars:
+			http_port: 80
+			domain: example.com
+		  tasks:
+			- name: install apache2
+			  apt: name=apache2 update_cache=yes state=latest
+
+			- name: enabled mod_rewrite
+			  apache2_module: name=rewrite state=present
+			  notify:
+				- restart apache2
+
+			- name: apache2 listen on port {{ http_port }}
+			  lineinfile: dest=/etc/apache2/ports.conf regexp="^Listen " line="Listen {{ http_port }}" state=present
+			  notify:
+				- restart apache2
+
+			- name: apache2 virtualhost on port {{ http_port }}
+			  lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^<VirtualHost \*:" line="<VirtualHost *:{{ http_port }}>"
+			  notify:
+				- restart apache2
+
+			- name: create virtual host file
+			  template: src=virtualhost.conf dest=/etc/apache2/sites-available/{{ domain }}.conf
+
+			- name: a2ensite {{ domain }}
+			  command: a2ensite {{ domain }}
+			  args:
+				creates: /etc/apache2/sites-enabled/{{ domain }}.conf
+			  notify:
+				- restart apache2
+
+		  handlers:
+			- name: restart apache2
+			  service: name=apache2 state=restarted
+
+
+Save and close the file, then run the playbook.
+
+$ ansible-playbook apache.yml --ask-sudo-pass
+---
+
+If you now visit the hostname or IP address of your secondary Droplet in your browser, you will see it responds on port 80 again, not port 8081. Next, visit the domain (i.e. example.com) we specified for the new virtual host. Because we haven't added any files in yet, it should show an Apache 404 error page rather than the Apache welcome page. If so, your virtual host is working correctly, and you still haven't SSH'ed into your secondary Droplet to run a single command.
+
+
+
+Step 7  Using a Git Repository For Your Website
++++
+
+
+In this section we will use Ansible to clone a Git repository in order to set up your website content.
+
+Every website needs content, and although it is normal to SSH in and manually clone a Git repository to set up a new website, Ansible provides us with the tools we need to do it automatically. For this example, the git module will do what is required.
+
+The git module has a lot of options, with the relevant ones for this tutorial being:
+
+
+    - dest -- The path on the host where the repository will be checked out to.
+    - repo -- The repository url that will be cloned. This must be accessible by the host.
+    - update -- When set to no, this prevents Ansible from updating the repository when it already exists.
+    - accept_hostkey -- Tells SSH to accept any unknown host key when connecting via SSH. This is very useful as it saves the need to login via SSH to accept the first login attempt, but it does remove the ability to manually check the host signature. Depending on your repository, you may need this option.
+
+
+
+For the purposes of the tutorial, there is a simple Git repository with a single index.html page that can be cloned onto your host. If you already have another public repository that contains similar, feel free to substitute it. With that in mind, the git task will look like this:
+
+
+		#
+		- name: clone basic html template
+		  git: repo=https://github.com/do-community/ansible-apache-tutorial.git dest=/var/www/example.com update=no
+
+
+However, if you ran the Playbook now, you would probably get an error. We first need to install the git package so Ansible can use it to clone the repository. The apt task needs to be updated to install both the apache2 package and the git package. Checking the apt documentation tells us that the name option only takes a single package, so that won't help. Instead, we need to use a list of items.
+
+Ansible provides the ability to specify a list of items to loop through and apply the task to each. They are specified using the with_items option as part of the task, and our apt task will be updated to look like this:
+
+
+		#
+		- name: install packages
+		  apt: name={{ item }} update_cache=yes state=latest
+		  with_items:
+			- apache2
+			- git
+
+
+
+The list of items uses the item variable and will execute the task for each item in the list.
+
+
+Open apache.yml again.
+
+Update the playbook to match the following:
+
+
+		#
+		#
+		---
+		- hosts: apache
+		  sudo: yes
+
+		  vars:
+			http_port: 80
+			domain: example.com
+
+		  tasks:
+
+			- name: install packages
+			  apt: name={{ item }} update_cache=yes state=latest
+			  with_items:
+				- apache2
+				- git
+
+			- name: enabled mod_rewrite
+			  apache2_module: name=rewrite state=present
+			  notify:
+				- restart apache2
+
+			- name: apache2 listen on port {{ http_port }}
+			  lineinfile: dest=/etc/apache2/ports.conf regexp="^Listen " line="Listen {{ http_port }}" state=present
+			  notify:
+				- restart apache2
+
+			- name: apache2 virtualhost on port {{ http_port }}
+			  lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="^<VirtualHost \*:" line="<VirtualHost *:{{ http_port }}>"
+			  notify:
+				- restart apache2
+
+			- name: create virtual host file
+			  template: src=virtualhost.conf dest=/etc/apache2/sites-available/{{ domain }}.conf
+
+			- name: a2ensite {{ domain }}
+			  command: a2ensite {{ domain }}
+			  args:
+				creates: /etc/apache2/sites-enabled/{{ domain }}.conf
+			  notify:
+				- restart apache2
+
+			- name: clone basic html template
+			  git: repo=https://github.com/do-community/ansible-apache-tutorial.git dest=/var/www/example.com update=no
+
+		  handlers:
+			- name: restart apache2
+			  service: name=apache2 state=restarted
+
+
+
+Save the file and run the playbook.
+
+ansible-playbook apache.yml --ask-sudo-pass
+
+It should install git and successfully clone the repository. You should now see something other than a 404 error when you visit the virtual host from Step 6. Don't forget to check the non virtual host is still returning the default page.
+
+In summary, you now have Git installed and a basic HTML page has been cloned via Git onto your new virtual host. There are still no manual SSH commands required. If you're only after a basic HTML website, and it's in a public Git repository, then you are done!
+
+
+Conclusion
+
+We have just created an Ansible Playbook to automate the entire process of configuring your host to run the Apache Web Server, with virtual hosts, and a Git repository. All of that has been achieved without needing to log directly into the server, and the best part is that you can run your new Playbook against most Ubuntu servers to achieve the same result.
+
+Note: if your host already has Apache set up and modified, you will most likely need to handle each of the modifications to bring it back to the required state. On the positive side, Ansible will only fix these modifications if they exist, so it's safe to have them in the main Playbook!
+
+Ansible is incredibly powerful and also has a very easy learning curve. You can start off using the basic concepts covered in this tutorial and either stay at this level or learn a lot more to get to the really complicated parts. Either way, you will be able to configure and manage your server(s) without needing to manually login for most, if not all, tasks.
