@@ -1,0 +1,4 @@
+- name: Add "Google Chrome" repository
+  become: True
+  apt_repository: repo='deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' state=present
+  when: ansible_distribution == "Ubuntu" or ansible_distribution == "Debian"

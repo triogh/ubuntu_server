@@ -1,0 +1,9 @@
+---
+# handlers file for common
+- name: Restart ssh
+  become: True
+  service: name=ssh state=restarted
+
+- name: restart networking
+  become: True
+  service: name=networking state=restarted

@@ -1,0 +1,7 @@
+---
+- name: Install sound related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - alsa-base
+    - pulseaudio

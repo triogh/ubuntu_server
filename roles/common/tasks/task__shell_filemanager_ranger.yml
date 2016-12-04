@@ -1,0 +1,11 @@
+---
+- name: Install ranger related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - ranger
+    - lynx
+    - elinks
+    - highlight
+    - atool
+    - mediainfo

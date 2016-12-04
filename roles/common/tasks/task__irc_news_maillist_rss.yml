@@ -1,0 +1,9 @@
+---
+- name: Install irc, news, maillist, rss related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - weechat
+    - alpine
+    - slrn
+    - newsbeuter

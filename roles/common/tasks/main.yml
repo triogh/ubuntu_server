@@ -1,0 +1,161 @@
+---
+# tasks file for common
+- include: task__adds_google_repo_key.yml 
+- include: task__adds_google_chrome_repo.yml 
+- include: task__runs_apt_get_update.yml
+- include: task__awesomeWM.yml
+- include: task__sound.yml
+- include: task__virtualization.yml 
+- include: task__nfs_client.yml
+- include: task__perl.yml
+- include: task__python2.yml
+- include: task__python3.yml
+- include: task__docker.yml
+- include: task__monitorix.yml
+- include: task__multimedia.yml
+- include: task__pdf.yml
+- include: task__www_browsers.yml
+- include: task__office.yml
+- include: task__encryption.yml
+- include: task__firewall.yml
+- include: task__shell_compression_utils.yml
+- include: task__shell_monitor_utils.yml
+- include: task__shell_network_utils.yml
+- include: task__shell_terminal_multiplexers.yml
+- include: task__shell_terminals.yml
+- include: task__shell_filemanager_ranger.yml
+- include: task__shell_uncategorized_utils.yml
+- include: task__create_documentation_utils.yml
+- include: task__cvs.yml
+- include: task__ntp_client.yml
+- include: task__apt_dpkg_related_pkgs.yml
+- include: task__display_settings.yml
+- include: task__irc_news_maillist_rss.yml
+- include: task__bluetooth.yml
+- include: task__clipboard_manager.yml
+- include: task__digital_journal.yml
+
+
+- name: Equivalent of "aptitude safe-upgrade"
+  become: True
+  apt: upgrade=safe
+  tags: upgrade-pkgs
+
+
+- name: Check if "~user/.xinitrc" file exists
+  stat: path={{ ansible_env.HOME }}/.xinitrc
+  register: xinitrc
+
+- name: Create "~user/.xinitrc" file, if not exists
+  file: path={{ ansible_env.HOME }}/.xinitrc state=touch
+  when: not xinitrc.stat.exists
+
+- name: Add line "exec awesome" to "~user/.xinitrc" file, if not present
+  lineinfile: dest={{ ansible_env.HOME }}/.xinitrc line="exec awesome"
+
+
+
+- name: Setup ufw
+  become: True
+  ufw: state=enabled policy=deny
+
+
+
+- name: Check if "/etc/ssh/sshd_config" file exists
+  stat: path=/etc/ssh/sshd_config
+  register: sshd_config
+
+- name: Disallow password authentication
+  become: True
+  lineinfile: dest=/etc/ssh/sshd_config
+              regexp="^PasswordAuthentication"
+              line="PasswordAuthentication no"
+              state=present
+  notify: Restart ssh
+  when: sshd_config.stat.exists
+
+- name: Disallow root SSH access
+  become: True
+  lineinfile: dest=/etc/ssh/sshd_config
+              regexp="^PermitRootLogin"
+              line="PermitRootLogin no"
+              state=present
+  notify: Restart ssh
+  when: sshd_config.stat.exists
+
+
+
+- name: Check if "~user/.vimrc" exists
+  stat: path={{ ansible_env.HOME }}/.vimrc
+  register: vimrc
+
+- name: Check if "~user/.vim/templates/pl.template" exists
+  stat: path={{ ansible_env.HOME }}/.vim/templates/pl.template
+  register: pl_template
+
+- name: Create temp directory for vim repo using mktemp
+  command: mktemp -d
+  register: tempdir_vim_repo
+  when: (not vimrc.stat.exists) or (not pl_template.stat.exists)
+
+- name: Git checkout vim repo from github to temp directory
+  git: repo=https://github.com/triogh/vim dest={{ tempdir_vim_repo.stdout  }}
+  when: (not vimrc.stat.exists) or (not pl_template.stat.exists)
+
+- name: Copy "vimrc" from temp repo directory to user home, if not exists
+  copy: remote_src=True src={{ tempdir_vim_repo.stdout }}/vimrc dest={{ ansible_env.HOME }}/.vimrc
+  when: not vimrc.stat.exists
+
+- name: Create "~user/.vim/templates/" directory, if not exists
+  file: path={{ ansible_env.HOME }}/.vim/templates state=directory mode=0755
+  when: not pl_template.stat.exists
+
+- name: Copy "pl.template" from temp repo directory to user home, if not exists
+  copy: remote_src=True src={{ tempdir_vim_repo.stdout }}/pl.template dest={{ ansible_env.HOME }}/.vim/templates/pl.template
+  when: not pl_template.stat.exists
+
+- name: Remove temp repo directory {{ tempdir_vim_repo.stdout }}, if exists
+  file: path={{ tempdir_vim_repo.stdout }} state=absent
+  when: (not vimrc.stat.exists) or (not pl_template.stat.exists)
+
+
+
+- name: Add "~user/.ansible.cfg" with block, if not exists
+  blockinfile: 
+    create: yes 
+    dest: "{{ ansible_env.HOME }}/.ansible.cfg"
+    block: |
+      [defaults]
+      log_path = {{ ansible_env.HOME }}/ansible.log
+
+
+- name: Just a debug example 
+  debug: msg="The $HOME of the user running the playbook is {{ ansible_env.HOME }}"
+  tags: 
+    - debug
+    - test
+
+- name: Another debug example
+  debug: var=ansible_version
+  tags:
+    - debug
+    - test
+
+
+# Run only once
+#   - name: network_interface
+#     debug: var=network_interface
+#   - name: network_interface_ip_address
+#     debug: var=network_interface_ip_address
+#   - name: network_gateway
+#     debug: var=network_gateway
+#   - name: nameserver_1
+#     debug: var=nameserver_1
+#   - name: nameserver_2
+#     debug: var=nameserver_2
+#
+#   - name: Write "/etc/network/interfaces" with static IP and nameservers 
+#     become: True
+#     template: src=etc_network_interfaces.j2 dest=/etc/network/interfaces
+#     notify:
+#       - restart networking

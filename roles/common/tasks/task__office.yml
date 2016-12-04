@@ -1,0 +1,7 @@
+---
+- name: Install office related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - libreoffice
+    - impressive

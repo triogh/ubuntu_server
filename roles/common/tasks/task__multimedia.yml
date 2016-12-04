@@ -1,0 +1,13 @@
+---
+- name: Install multimedia related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - vlc
+    - mpv
+    - clementine
+    - cmus
+    - fatsort
+    - comix
+    - calibre
+    - gpicview
