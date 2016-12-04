@@ -142,18 +142,17 @@
     - test
 
 
-# Run only once
-#   - name: network_interface
-#     debug: var=network_interface
-#   - name: network_interface_ip_address
-#     debug: var=network_interface_ip_address
-#   - name: network_gateway
-#     debug: var=network_gateway
-#   - name: nameserver_1
-#     debug: var=nameserver_1
-#   - name: nameserver_2
-#     debug: var=nameserver_2
-#
+- name: network_interface
+  debug: var=network_interface
+- name: network_interface_ip_address
+  debug: var=network_interface_ip_address
+- name: network_gateway
+  debug: var=network_gateway
+- name: nameserver_1
+  debug: var=nameserver_1
+- name: nameserver_2
+  debug: var=nameserver_2
+
 #   - name: Write "/etc/network/interfaces" with static IP and nameservers 
 #     become: True
 #     template: src=etc_network_interfaces.j2 dest=/etc/network/interfaces
