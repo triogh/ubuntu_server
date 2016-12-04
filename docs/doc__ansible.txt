@@ -2616,3 +2616,702 @@ We have just created an Ansible Playbook to automate the entire process of confi
 Note: if your host already has Apache set up and modified, you will most likely need to handle each of the modifications to bring it back to the required state. On the positive side, Ansible will only fix these modifications if they exist, so it's safe to have them in the main Playbook!
 
 Ansible is incredibly powerful and also has a very easy learning curve. You can start off using the basic concepts covered in this tutorial and either stay at this level or learn a lot more to get to the really complicated parts. Either way, you will be able to configure and manage your server(s) without needing to manually login for most, if not all, tasks.
+
+
+
+
+Title: how-to-deploy-a-basic-php-application-using-ansible-on-ubuntu-14-04
+===
+Source: https://www.digitalocean.com/community/tutorials/how-to-deploy-a-basic-php-application-using-ansible-on-ubuntu-14-04
+
+Added: Sun Dec  4 11:41:51 CET 2016
+Created: PostedApril 14, 2015 
+
+
+Tutorial Series
+This tutorial is part 1 of 3 in the series: Automating Your PHP Application Deployment Process with Ansible 
+
+
+Introduction
++++
+
+This tutorial covers the process of provisioning a basic PHP application using Ansible. The goal at the end of this tutorial is to have your new web server serving a basic PHP application without a single SSH connection or manual command run on the target Droplet.
+
+We will be using the Laravel framework as an example PHP application, but these instructions can be easily modified to support other frameworks and applications if you already have your own.
+
+
+Prerequisites
++++
+
+For this tutorial, we will be using Ansible to install and configure Nginx, PHP, and other services on a Ubuntu 14.04 Droplet. This tutorial builds on basic Ansible knowledge, so if you are new to Ansible, you can read through this basic Ansible tutorial first.
+
+To follow this tutorial, you will need:
+
+    - One Ubuntu 14.04 Droplet of any size that we will be using to configure and deploy our PHP applicaton onto. The IP address of this machine will be referred to as your_server_ip throughout the tutorial.
+
+    - One Ubuntu 14.04 Droplet which will be used for Ansible. This is the Droplet you will be logged into for the entirety of this tutorial.
+
+    - Sudo non-root users configured for both Droplets.
+
+    - SSH keys for the Ansible Droplet to authorize login on the PHP deployment Droplet, which you can set up by following this tutorial on your Ansible Droplet.
+
+
+
+Step 1  Installing Ansible
++++
+
+The first step is to install Ansible. This is easily accomplished by installing the PPA (Personal Package Archive), and installing the Ansible package with apt.
+
+First, add the PPA using the apt-add-repository command.
+
+
+		#
+    	sudo apt-add-repository ppa:ansible/ansible
+
+Once that has finished, update the apt cache.
+
+
+		#
+		sudo apt-get update
+
+Finally, install Ansible.
+
+
+		#
+		sudo apt-get install ansible
+
+MY_NOTE:
+I just install ansible from the default ubuntu repos, without adding the additional PPA. Probably the version in the default ubuntu repos is older then the one available through the PPA, but I didn't have any issues related to that as of yet, so I'll stick with the Ubuntu default repos for now.
+
+Once Ansible is installed, we'll create a new directory to work in and set up a basic configuration. By default, Ansible uses a hosts file located at /etc/ansible/hosts, which contains all of the servers it is managing. While that file is fine for some use cases, it's global, which isn't what we want here.
+
+/etc/ansible/hosts
+---
+
+For this tutorial, we will create a local hosts file and use that instead. We can do this by creating a new Ansible configuration file within our working directory, which we can use to tell Ansible to look for a hosts file within the same directory.
+
+Create a new directory (which we will use for the rest of this tutorial).
+
+
+		#
+		mkdir ~/ansible-php
+
+Move into the new directory.
+
+
+		#
+		cd ~/ansible-php/
+
+
+
+Create a new file called ansible.cfg and open it for editing using nano or your favorite text editor.
+
+
+		#
+		nano ansible.cfg
+
+
+Add in the hostfile configuration option with the value of hosts in the [defaults] group by copying the following into the ansible.cfg file.
+
+
+		#
+		[defaults]
+		hostfile = hosts
+
+
+Save and close the ansible.cfg file. Next, we'll create the hosts file, which will contain the IP address of the PHP Droplet where we will deploy our application.
+
+
+		#
+		nano hosts
+
+
+Copy the below to add in a section for php, replacing your_server_ip with your server IP address and sammy with the sudo non-root user you created in the prerequisites on your PHP Droplet.
+hosts
+
+
+		#
+		[php]
+		your_server_ip ansible_ssh_user=sammy
+
+
+Save and close the hosts file. Let's run a simple check to make sure Ansible is able to connect to the host as expected by calling the ping module on the new php group.
+
+
+$ ansible php -m ping
+---
+
+You may get an SSH host authentication check, depending on if you've ever logged into that host before. The ping should come back with a successful response, which looks something like this:
+
+
+		#
+		111.111.111.111 | success >> {
+			"changed": false,
+			"ping": "pong"
+		}
+
+
+
+Ansible is now be installed and configured; we can move on to setting up our web server.
+
+
+
+Step 2  Installing Required Packages
++++
+
+In this step we will install some required system packages using Ansible and apt. In particular, we will install git, nginx, sqlite3, mcrypt, and a couple of php5-* packages.
+
+
+Before we add in the apt module to install the packages we want, we need to create a basic playbook. We'll build on this playbook as we go through the tutorial. Create a new playbook called php.yml.
+
+
+		#
+		nano php.yml
+
+
+Paste in the following configuration. The first two lines specifies the hosts group we wish to use (php) and makes sure it runs commands with sudo by default. The rest adds in a module with the packages that we need. You can customize this for your own application, or use the configuration below if you're following along with the example Laravel application.
+
+
+		#
+		#
+		---
+		- hosts: php
+		  sudo: yes
+
+		  tasks:
+
+		  - name: install packages
+			apt: name={{ item }} update_cache=yes state=latest
+			with_items:
+			  - git
+			  - mcrypt
+			  - nginx
+			  - php5-cli
+			  - php5-curl
+			  - php5-fpm
+			  - php5-intl
+			  - php5-json
+			  - php5-mcrypt
+			  - php5-sqlite
+			  - sqlite3
+
+
+Save the php.yml file. Finally, run ansible-playbook to install the packages on the Droplet. Don't forget to use the --ask-sudo-pass option if your sudo user on your PHP Droplet requires a password.
+
+
+$ ansible-playbook php.yml --ask-sudo-pass
+---
+
+
+Step 3  Modifying System Configuration Files
++++
+
+
+In this section we will modify some of the system configuration files on the PHP Droplet. The most important configuration option to change (aside from Nginx's files, which will be covered in a later step) is the cgi.fix_pathinfo option in php5-fpm, because the default value is a security risk.
+
+We'll first explain all the sections we're going to add to this file, then include the entire php.yml file for you to copy and paste in.
+
+The lineinfile module can be used to ensure the configuration value within the file is exactly as we expect it. This can be done using a generic regular expression so Ansible can understand most forms the parameter is likely to be in. We'll also need to restart php5-fpm and nginx to ensure the change takes effect, so we need to add in two handlers as well, in a new handlers section. Handlers are perfect for this, as they are only fired when the task changes. They also run at the end of the playbook, so multiple tasks can call the same handler and it will only run once.
+
+The section to do the above will look like this:
+
+
+		#
+		#
+		- name: ensure php5-fpm cgi.fix_pathinfo=0
+		  lineinfile: dest=/etc/php5/fpm/php.ini regexp='^(.*)cgi.fix_pathinfo=' line=cgi.fix_pathinfo=0
+		  notify:
+		    - restart php5-fpm
+		    - restart nginx
+
+		  handlers:
+		    - name: restart php5-fpm
+		      service: name=php5-fpm state=restarted
+
+		    - name: restart nginx
+		      service: name=nginx state=restarted
+
+
+Note: Ansible version 1.9.1 bug
+
+ There is a bug with Ansible version 1.9.1 that prevents php5-fpm from being restarted with the service module, as we have used in our handlers.
+
+Until a fix is released, you can work around this issue by changing the restart php5-fpm handler from using the service command to using the shell command, like this:
+
+
+		#
+		- name: restart php5-fpm
+		  shell: service php5-fpm restart
+
+This will bypass the issue and correctly restart php5-fpm.
+
+
+Next, we also need to ensure the php5-mcrypt module is enabled. This is done by running the php5enmod script with the shell task, and checking the 20-mcrypt.ini file is in the right place when it's enabled. Note that we are telling Ansible that the task creates a specific file. If that file exists, the task won't be run.
+
+
+		#
+		- name: enable php5 mcrypt module
+		  shell: php5enmod mcrypt
+		  args:
+			creates: /etc/php5/cli/conf.d/20-mcrypt.ini
+
+
+Now, open php.yml for editing again.
+
+
+Add the above tasks and handlers, so the file matches the below:
+
+
+		#
+		#
+		---
+		- hosts: php
+		  sudo: yes
+
+		  tasks:
+
+		  - name: install packages
+			apt: name={{ item }} update_cache=yes state=latest
+			with_items:
+			  - git
+			  - mcrypt
+			  - nginx
+			  - php5-cli
+			  - php5-curl
+			  - php5-fpm
+			  - php5-intl
+			  - php5-json
+			  - php5-mcrypt
+			  - php5-sqlite
+			  - sqlite3
+
+		  - name: ensure php5-fpm cgi.fix_pathinfo=0
+			lineinfile: dest=/etc/php5/fpm/php.ini regexp='^(.*)cgi.fix_pathinfo=' line=cgi.fix_pathinfo=0
+			notify:
+			  - restart php5-fpm
+			  - restart nginx
+
+		  - name: enable php5 mcrypt module
+			shell: php5enmod mcrypt
+			args:
+			  creates: /etc/php5/cli/conf.d/20-mcrypt.ini
+
+		  handlers:
+			- name: restart php5-fpm
+			  service: name=php5-fpm state=restarted
+
+			- name: restart nginx
+			  service: name=nginx state=restarted
+
+
+Finally, run the playbook.
+
+$ ansible-playbook php.yml --ask-sudo-pass
+---
+
+
+The Droplet now has all the required packages installed and the basic configuration set up and ready to go.
+
+
+Step 4  Cloning the Git Repository
++++
+
+In this section we will clone the Laravel framework repository onto our Droplet using Git. Like in Step 3, we'll explain all the sections we're going to add to the playbook, then include the entire php.yml file for you to copy and paste in.
+
+Before we clone our Git repository, we need to make sure /var/www exists. We can do this by creating a task with the file module.
+
+
+		#
+		- name: create /var/www/ directory
+		  file: dest=/var/www/ state=directory owner=www-data group=www-data mode=0700
+
+
+As mentioned above, we need to use the Git module to clone the repository onto our Droplet. The process is simple because all we normally require for a git clone command is the source repository. In this case, we will also define the destination, and tell Ansible to not update the repository if it already exists by setting update=no. Because we are using Laravel, the git repository URL we will use is https://github.com/laravel/laravel.git.
+
+
+However, we need to run the task as the www-data user to ensure that the permissions are correct. To do this, we can tell Ansible to run the command as a specific user using sudo. The final task will look like this:
+
+
+		#
+		- name: Clone git repository
+		  git: >
+			dest=/var/www/laravel
+			repo=https://github.com/laravel/laravel.git
+			update=no
+		  sudo: yes
+		  sudo_user: www-data
+
+
+Note: For SSH-based repositories you can add accept_hostkey=yes to prevent SSH host verification from hanging the task.
+
+As before, open the php.yml file for editing.
+
+
+Add the above tasks to the the playbook; the end of the file should match the following:
+
+
+
+		#
+		#
+		...
+
+		  - name: enable php5 mcrypt module
+			shell: php5enmod mcrypt
+			args:
+			  creates: /etc/php5/cli/conf.d/20-mcrypt.ini
+
+		  - name: create /var/www/ directory
+			file: dest=/var/www/ state=directory owner=www-data group=www-data mode=0700
+
+		  - name: Clone git repository
+			git: >
+			  dest=/var/www/laravel
+			  repo=https://github.com/laravel/laravel.git
+			  update=no
+			sudo: yes
+			sudo_user: www-data
+
+		  handlers:
+			- name: restart php5-fpm
+			  service: name=php5-fpm state=restarted
+
+			- name: restart nginx
+			  service: name=nginx state=restarted
+
+
+Save and close the playbook, then run it.
+
+MY_NOTE:
+I have used "become_user" instead of "sudo_user", when cloning git repository since "sudo_user" is deprecated.
+
+
+Step 5  Creating an Application with Composer
++++
+
+
+In this step, we will use Composer to install the PHP application and its dependencies.
+
+Composer has a create-project command that installs all of the required dependencies and then runs the project creation steps defined in the post-create-project-cmd section of the composer.json file. This is the best way to ensure the application is set up correctly for its first use.
+
+We can use the following Ansible task to download and install Composer globally as /usr/local/bin/composer. It will then be accessible by anyone using the Droplet, including Ansible.
+
+
+		#
+		- name: install composer
+		  shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+		  args:
+			creates: /usr/local/bin/composer
+
+
+
+With Composer installed, there is a Composer module that we can use. In our case, we want to tell Composer where our project is (using the working_dir paramter), and to run the create-project command. We also need to add optimize_autoloader=no parameter, as this flag isn't supported by the create-project command. Like the git command, we also want to run this as the www-data user to ensure permissions are valid. Putting it all together, we get this task:
+
+
+		#
+		- name: composer create-project
+		  composer: command=create-project working_dir=/var/www/laravel optimize_autoloader=no
+		  sudo: yes
+		  sudo_user: www-data
+
+
+Note: create-project task may take a significant amount of time on a fresh Droplet, as Composer will have an empty cache and will need download everything fresh.
+
+Now, open the php.yml file for editing.
+
+
+Add the tasks above at the end of the tasks section, above handlers, so that the end of the playbook matches the following:
+
+
+		#
+		#
+		...
+		  - name: Clone git repository
+			git: >
+			  dest=/var/www/laravel
+			  repo=https://github.com/laravel/laravel.git
+			  update=no
+			sudo: yes
+			sudo_user: www-data
+
+		  - name: install composer
+			shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+			args:
+			  creates: /usr/local/bin/composer
+
+		  - name: composer create-project
+			composer: command=create-project working_dir=/var/www/laravel optimize_autoloader=no
+			sudo: yes
+			sudo_user: www-data
+
+		  handlers:
+			- name: restart php5-fpm
+			  service: name=php5-fpm state=restarted
+
+			- name: restart nginx
+			  service: name=nginx state=restarted
+
+
+Finally, run the playbook.
+
+
+What would happen if we ran Ansible again now? The composer create-project would run again, and in the case of Laravel, this means a new APP_KEY. So what we want instead is to set that task to only run after a fresh clone. We can ensure that it is only run once by registering a variable with the results of the git clone task, and then checking those results within the composer create-project task. If the git clone task was Changed, then we run composer create-project, if not, it is skipped.
+
+Note: There appears to be a bug in some versions of the Ansible composer module, and it may output OK instead of Changed, as it ignores that scripts were executed even though no dependencies were installed.
+
+Open the php.yml file for editing.
+
+Find the git clone task. Add the register option to save the results of the task into the the cloned variable, like this:
+
+
+		#
+		#
+		- name: Clone git repository
+		  git: >
+			dest=/var/www/laravel
+			repo=https://github.com/laravel/laravel.git
+			update=no
+		  sudo: yes
+		  sudo_user: www-data
+		  register: cloned
+
+
+Next, find the composer create-project task. Add the when option to check the cloned variable to see if it has changed or not.
+
+
+		#
+		- name: composer create-project
+		  composer: command=create-project working_dir=/var/www/laravel optimize_autoloader=no
+		  sudo: yes
+		  sudo_user: www-data
+		  when: cloned|changed
+
+
+
+Save the playbook, and run it.
+
+Now Composer will stop changing the APP_KEY each time it is run.
+
+
+Step 6  Updating Environment Variables
++++
+
+
+In this step, we will update the environment variables for our application.
+
+Laravel comes with a default .env file which sets the APP_ENV to local and APP_DEBUG to true. We want to swap them for production and false, respectively. This can be done simply using the lineinfile module with the following tasks.
+
+
+Open the php.yml file for editing.
+
+
+Add this task to the the playbook; the end of the file should match the following:
+
+
+		#
+		#
+		...
+
+		  - name: composer create-project
+			composer: command=create-project working_dir=/var/www/laravel optimize_autoloader=no
+			sudo: yes
+			sudo_user: www-data
+			when: cloned|changed
+
+		  - name: set APP_DEBUG=false
+			lineinfile: dest=/var/www/laravel/.env regexp='^APP_DEBUG=' line=APP_DEBUG=false
+
+		  - name: set APP_ENV=production
+			lineinfile: dest=/var/www/laravel/.env regexp='^APP_ENV=' line=APP_ENV=production
+
+		  handlers:
+			- name: restart php5-fpm
+			  service: name=php5-fpm state=restarted
+
+			- name: restart nginx
+			  service: name=nginx state=restarted
+
+
+Save and run the playbook.
+
+The lineinfile module is very useful for quick tweaks of any text file, and it's great for ensuring environment variables like this are set correctly.
+
+
+Step 7 Configuring Nginx
++++
+
+In this section we will configure a Nginx to serve the PHP application.
+
+If you visit your Droplet in your web browser now (i.e. http://your_server_ip/), you will see the Nginx default page instead of the Laravel new project page. This is because we still need to configure our Nginx web server to serve the application from the /var/www/laravel/public directory. To do this we need to update our Nginx default configuration with that directory, and add in support for php-fpm, so it can handle PHP scripts.
+
+Create a new file called nginx.conf:
+
+
+		#
+		nano nginx.conf
+
+
+
+
+Save this server block within that file. You can check out Step 4 of this tutorial for more details about this Nginx configuration; the modifications below are specifying where the Laravel public directory is and making sure Nginx uses the hostname we've defined in the hosts file as the server_name with the inventory_hostname variable.
+
+
+		#
+		#
+		server {
+			listen 80 default_server;
+			listen [::]:80 default_server ipv6only=on;
+
+			root /var/www/laravel/public;
+			index index.php index.html index.htm;
+
+			server_name {{ inventory_hostname }};
+
+			location / {
+				try_files $uri $uri/ =404;
+			}
+
+			error_page 404 /404.html;
+			error_page 500 502 503 504 /50x.html;
+			location = /50x.html {
+				root /var/www/laravel/public;
+			}
+
+			location ~ \.php$ {
+				try_files $uri =404;
+				fastcgi_split_path_info ^(.+\.php)(/.+)$;
+				fastcgi_pass unix:/var/run/php5-fpm.sock;
+				fastcgi_index index.php;
+				fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+				include fastcgi_params;
+			}
+		}
+
+
+
+Save and close the nginx.conf file.
+
+Now, we can use the template module to push our new configuration file across. The template module may look and sound very similar to the copy module, but there is a big difference. copy will copy one or more files across without making any changes, while template copies a single files and will resolve all variables within the the file. Because we have used {{ inventory_hostname }} within our config file, we use the template module so it is resolved into the IP address that we used in the hosts file. This way, we don't need to hard code the configuration files that Ansible uses.
+
+
+However, as is usual when writing tasks, we need to consider the what will happen on the Droplet. Because we are changing the Nginx configuration, we need to restart Nginx and php-fpm. This is done using the notify options.
+
+
+		#
+		#
+		- name: Configure nginx
+		  template: src=nginx.conf dest=/etc/nginx/sites-available/default
+		  notify:
+			- restart php5-fpm
+			- restart nginx
+
+
+Open your php.yml file.
+
+Add in this nginx task at the end of the tasks section. The entire php.yml file should now look like this.
+
+
+		#
+		#
+		---
+		- hosts: php
+		  sudo: yes
+
+		  tasks:
+
+		  - name: install packages
+			apt: name={{ item }} update_cache=yes state=latest
+			with_items:
+			  - git
+			  - mcrypt
+			  - nginx
+			  - php5-cli
+			  - php5-curl
+			  - php5-fpm
+			  - php5-intl
+			  - php5-json
+			  - php5-mcrypt
+			  - php5-sqlite
+			  - sqlite3
+
+		  - name: ensure php5-fpm cgi.fix_pathinfo=0
+			lineinfile: dest=/etc/php5/fpm/php.ini regexp='^(.*)cgi.fix_pathinfo=' line=cgi.fix_pathinfo=0
+			notify:
+			  - restart php5-fpm
+			  - restart nginx
+
+		  - name: enable php5 mcrypt module
+			shell: php5enmod mcrypt
+			args:
+			  creates: /etc/php5/cli/conf.d/20-mcrypt.ini
+
+		  - name: create /var/www/ directory
+			file: dest=/var/www/ state=directory owner=www-data group=www-data mode=0700
+
+		  - name: Clone git repository
+			git: >
+			  dest=/var/www/laravel
+			  repo=https://github.com/laravel/laravel.git
+			  update=no
+			sudo: yes
+			sudo_user: www-data
+			register: cloned
+
+		  - name: install composer
+			shell: curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+			args:
+			  creates: /usr/local/bin/composer
+
+		  - name: composer create-project
+			composer: command=create-project working_dir=/var/www/laravel optimize_autoloader=no
+			sudo: yes
+			sudo_user: www-data
+			when: cloned|changed
+
+		  - name: set APP_DEBUG=false
+			lineinfile: dest=/var/www/laravel/.env regexp='^APP_DEBUG=' line=APP_DEBUG=false
+
+		  - name: set APP_ENV=production
+			lineinfile: dest=/var/www/laravel/.env regexp='^APP_ENV=' line=APP_ENV=production
+
+		  - name: Configure nginx
+			template: src=nginx.conf dest=/etc/nginx/sites-available/default
+			notify:
+			  - restart php5-fpm
+			  - restart nginx
+
+		  handlers:
+			- name: restart php5-fpm
+			  service: name=php5-fpm state=restarted
+
+			- name: restart nginx
+			  service: name=nginx state=restarted
+
+
+Save and run the playbook again.
+
+
+Once it completes, go back to your browser and refresh. You should now see the Laravel new project page!
+
+
+Conclusion
++++
+
+This tutorial covers deploying a PHP application with a public repository. While it is perfect for learning how Ansible works, you won't always be working on fully open source projects with open repositories. This means that you will need to authenticate the git clone in Step 3 with your private repository. This can be very easily done using SSH keys.
+
+For example, once you have your SSH deploy keys created and set on your repository, you can use Ansible to copy and configure them on your server before the git clone task:
+
+
+		#
+		- name: create /var/www/.ssh/ directory
+		  file: dest=/var/www/.ssh/ state=directory owner=www-data group=www-data mode=0700
+
+		- name: copy private ssh key
+		  copy: src=deploykey_rsa dest=/var/www/.ssh/id_rsa owner=www-data group=www-data mode=0600
+
+
+That should allow the server to correctly authenticate and deploy your application.
+
+You have just deployed a basic PHP application on a Ubuntu-based Nginx web server using Composer to manage dependencies! All of it has been completed without a needing to log directly into your PHP Droplet and run a single manual command.
+
+
+
