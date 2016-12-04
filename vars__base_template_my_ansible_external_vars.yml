@@ -1,0 +1,9 @@
+---
+# my_ansible_external_vars.yml
+# http://docs.ansible.com/ansible/playbooks_variables.html#variable-file-separation
+
+network_interface: 
+network_interface_ip_address:
+network_gateway:
+nameserver_1:
+nameserver_2:

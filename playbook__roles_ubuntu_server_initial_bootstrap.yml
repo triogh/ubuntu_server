@@ -3,24 +3,7 @@
   hosts: localhost
   connection: local
   gather_facts: yes
+  vars_files:
+    - "{{ ansible_env.HOME }}/my_ansible_external_vars.yml" 
   roles:
     - role: common
-
-# Run only once
-# Also related task needs to be uncommented in roles/common/tasks/main.yml
-#  vars_prompt:
-#    - name: "network_interface"
-#      prompt: "What network interface you want to configure?"
-#      private: no
-#    - name: "network_interface_ip_address"
-#      prompt: "IP address of the network interface?"
-#      private: no
-#    - name: "network_gateway"
-#      prompt: "What is the IP address of the network gateway?"
-#      private: no
-#    - name: "nameserver_1"
-#      prompt: "IP address of the first nameserver?"
-#      private: no
-#    - name: "nameserver_2"
-#      prompt: "IP address of the second nameserver?"
-#      private: no
