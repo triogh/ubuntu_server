@@ -4030,3 +4030,648 @@ Conclusion
 This tutorial covered the some of the more advanced topics when using Ansible for deploying PHP applications. All of the tasks used can be easily modified to suit most PHP applications (depending on their specific requirements), and it should give you a good starting point to set up your own playbooks for your applications.
 
 We have not used a single SSH command as part of this tutorial (apart from checking the www-data user login), and everything — including the MySQL user password — has been set up automatically. After following this tutorial, your application is ready to go and supports tools to push code updates.
+
+
+
+
+Title: how-to-automate-installing-wordpress-on-ubuntu-14-04-using-ansible
+===
+Source: https://www.digitalocean.com/community/tutorials/how-to-automate-installing-wordpress-on-ubuntu-14-04-using-ansible
+
+Added: Mon Dec  5 15:56:18 CET 2016
+Created: PostedJune 25, 2015
+
+
+Introduction
++++
+
+Ansible is a simple, agentless way to automate your infrastructure. If you find yourself deploying WordPress over and over again, Ansible could save you a lot of time.
+
+With a few lines of YAML (a straighforward markup language), we will automate the typically tedious process of setting up WordPress on a fresh Ubuntu 14.04 server. We will install WordPress more or less according to the process outlined in this tutorial, but automatically.
+
+We will use two servers: A build server running Ansible, and a target server on which we will install WordPress using Ansible.  
+
+
+
+Prerequisites
++++
+
+In order to complete this tutorial, you will need to have the following set up:
+
+
+
+    - A build server running Ubuntu 14.04. We will install Ansible on this server (referred to in this tutorial as the build-server). We will log into this server, and all the files and commands for this tutorial will be run on this server
+    - A target server running Ubuntu 14.04. We will install WordPress (via Ansible) on this server (referred to in this tutorial as the wordpress-server)
+    - Sudo non-root users configured for both servers
+    - Add the SSH key of your build-server sudo user to your wordpress-server's sudo user's authorized_keys. You can set this up by following this tutorial. You should run the tutorial from your build-server and upload the key to your wordpress-server
+
+
+(Optional) Passwordless sudo Access
+
+It is faster but less secure to use passwordless sudo access on your wordpress-server.
+
+To give our sudo user on the wordpress-server this privelege, we'll need to edit the sudoers file. Type visudo to edit the sudoers file:
+
+
+		#
+		$ visudo
+
+
+Add this line at the end:
+
+
+		#
+		sammy ALL=(ALL) NOPASSWD: ALL
+
+
+This has to be the last line in the file. It is important that this is the last line, otherwise it will be overridden.
+
+NB: Always edit the sudoers file using the visudo command. This will verify your changes before saving the file - this can save you from accidentally locking yourself out of the machine completely.
+
+Once you've done this you should be able to execute the following command on the wordpress-server without supplying a password:
+
+
+		#
+		sudo echo "Hello"
+
+
+Now, throughout this tutorial, you can run the ansible-playbook commands without the -K flag, so you don't have to enter the sudo password manually.
+
+
+$ ansible-playbook playbook.yml -i hosts -u sammy
+---
+
+
+Step 1  Installing Ansible
++++
+
+In this section we'll install Ansible on your build-server.
+
+SSH in to your build-server and run this command to install Ansible:
+
+
+		#
+		sudo apt-get install ansible -y 
+
+You can make sure that Ansible is installed by running:
+
+
+		#
+		ansible --version
+
+You should see output something like:
+
+
+		#
+		ansible 1.5.4
+
+
+
+Step 2  Setting Up the File Structure
++++
+
+Now that we've installed Ansible, let's get prepare the file structure for our Ansible playbook.
+
+Create a directory for our playbook.
+
+
+		#
+		cd ~
+		mkdir wordpress-ansible && cd wordpress-ansible
+
+
+
+cd into this directory and create two files: one called playbook.yml (this is where we'll write the commands to install WordPress) and another called hosts (this tells Ansible on which servers to run the commands):
+
+
+		#
+		touch playbook.yml
+		touch hosts
+
+
+It is best practice to split our playbooks up into roles. You can think of roles as re-usable modules. For this project we'll create four roles: 
+
+
+    - server
+    - php
+    - mysql
+    - wordpress
+
+
+From the project root folder (~/wordpress-ansible), create a directory called roles and cd into it:
+
+
+		#
+		mkdir roles && cd roles
+
+
+We can bootstrap our roles with an Ansible tool called ansible-galaxy. For each role that we want to create, we will run ansible-galaxy init:
+
+
+$ ansible-galaxy init server
+---
+
+		#
+		ansible-galaxy init server 
+		ansible-galaxy init php 
+		ansible-galaxy init mysql
+		ansible-galaxy init wordpress
+
+
+You'll notice that this creates a whole file structure for each of our roles. This is in accordance with Ansible's best practices. For the most part we will be concerned with each role's tasks/main.yml file.
+
+At this point we should have the following file structure:
+
+
+		#
+		[.]
+		|_ playbook.yml
+		|_ hosts
+		|_ [roles]
+			  |_ [server]
+					|_ ...
+			  |_ [php]
+					|_ ...
+			  |_ [mysql]
+					|_ ...
+			  |_ [wordpress]
+					|_ ...                                    
+
+
+
+Step 3  Writing the Playbook
++++
+
+In this section, we'll write the commands to install WordPress on our remote server. 
+
+Inventory (hosts file)
+---
+
+
+An Ansible inventory informs Ansible about what servers we have that we want to install WordPress on. We can run our playbooks for the servers or groups of servers defined in our inventory file (hosts). Our inventory is very simple.
+
+Edit hosts:
+
+
+		#
+		nano ~/wordpress-ansible/hosts
+
+
+
+Add the line for [wordpress], and below it, the IP address of your wordpress-server:
+
+
+		#
+		[wordpress]
+		wordpress_server_ip
+
+
+MY_NOTE:
+The hosts file I used.
+
+
+		#
+		$ cat hosts
+		[wordpress]
+		test_machine ansible_host=127.0.0.1 ansible_port=2222 ansible_user=vagrant
+
+
+You could put a number of different IPs under the [wordpress] group. This would cause the commands to be run on all servers listed here, provided you have access set up on all the servers. This would let you install WordPress on a number of different servers at once.
+
+
+Playbook
+---
+
+We can think of a playbook as the definition of our WordPress app. Our playbook will combine the roles we created to configure a useful application (in this case a WordPress site).
+
+Edit the playbook file:
+
+
+		#
+		nano ~/wordpress-ansible/playbook.yml
+
+
+Add these contents, which tell Ansible which hosts to run the roles on (the wordpress ones in the hosts file), and which roles to run:
+
+
+		#
+		#
+		---
+		- hosts: wordpress
+		  roles:
+			- server
+			- php
+			- mysql
+			- wordpress
+
+
+Move to your playbook directory:
+
+
+Let's make sure our basic connection from the build-server to the wordpress-server works by running the playbook. It won't do anything yet; it'll just test the connection: 
+
+
+$ ansible-playbook playbook.yml -i hosts -u sammy -K
+~~~
+
+Enter the sudo password for your sudo user on the wordpress-server when prompted.
+
+You should see output something like:
+
+
+		#
+		PLAY [wordpress] ************************************************************** 
+
+		GATHERING FACTS *************************************************************** 
+		ok: [188.166.68.134]
+
+		PLAY RECAP ******************************************************************** 
+		188.166.68.134             : ok=1    changed=0    unreachable=0    failed=0 
+
+
+This indicates that we were able to connect to the server. However, we haven't defined any plays yet, so nothing was executed on our wordpress-server. Let's fix that by filling out the details in our four roles.
+
+If this was not successful, double-check that you can SSH from the build-server to the wordpress-server using an SSH key.
+
+
+Step 3  Creating Roles
++++
+
+Server
+---
+
+First things first; let's set up our server. For this we'll be editing the server role.
+
+The server role will install all the software we need on the target server. Edit this file:
+
+
+		#
+		nano roles/server/tasks/main.yml`
+
+
+
+Add the following contents; make sure there's only one line with --- (there should be one there by default):
+
+
+		#
+		#
+		---
+		- name: Update apt cache
+		  apt: update_cache=yes cache_valid_time=3600
+		  sudo: yes
+
+		- name: Install required software
+		  apt: name={{ item }} state=present
+		  sudo: yes
+		  with_items:
+			- apache2
+			- mysql-server
+			- php5-mysql
+			- php5
+			- libapache2-mod-php5
+			- php5-mcrypt
+			- python-mysqldb
+
+
+This does the following:
+
+
+    - Update the apt-cache (apt-get update)
+    - apt-get install Apache, MySQL, PHP, and related software
+
+
+If you're interested in the details of what we're installing, you can have have a look at the tutorial on how to manually install LAMP on Ubuntu 14.04.
+
+We can now run our playbook like so: 
+
+
+$ ansible-playbook playbook.yml -i hosts -u sammy -K
+~~~
+
+
+You should see output something like this:
+
+
+		#
+		PLAY [wordpress] ************************************************************** 
+
+		GATHERING FACTS *************************************************************** 
+		ok: [188.166.68.134]
+
+		TASK: [server | Update apt cache] ********************************************* 
+		ok: [188.166.68.134]
+
+		TASK: [server | Install required software] ************************************ 
+		changed: [188.166.68.134] => (item=apache2,mysql-server,php5-mysql,php5,libapache2-mod-php5,php5-mcrypt,python-mysqldb)
+
+		PLAY RECAP ******************************************************************** 
+		188.166.68.134             : ok=3    changed=1    unreachable=0    failed=0  
+
+
+After running this, you should be able to access the default Apache page at http://wordpress_server_ip/. Awesome. Apache is now installed and running on the wordpress-server.
+
+If your build hangs indefinitely at the point of TASK: [server | Update apt cache], this can indicate a lack of permissions on the target server. Make sure sudo access is configured properly on the wordpress-server.
+
+
+PHP
+---
+
+Let's sort out our PHP requirements. We'll be doing this in the PHP role. Edit the main tasks file for PHP:
+
+
+		#
+		nano roles/php/tasks/main.yml
+
+
+Add the following (again, the --- line should already be there):
+
+
+		#
+		---
+		- name: Install php extensions
+		  apt: name={{ item }} state=present
+		  sudo: yes
+		  with_items:
+			- php5-gd 
+			- libssh2-php
+
+
+This will install the required PHP extensions.
+
+
+MySQL
+---
+
+We also need to set up a MySQL database for our WordPress site. We'll do this in the mysql role.
+
+We're going to need a few variables for this one. For a role, you can specify default values for any variables in the defaults/main.yml file.
+
+
+
+		#
+		nano roles/mysql/defaults/main.yml
+
+
+
+Add your database name, database username, and database password (that you want to create), in that order. Make sure you pick a secure wp_db_password.
+
+
+		#
+		#
+		---
+		wp_mysql_db: wordpress
+		wp_mysql_user: wordpress
+		wp_mysql_password: wp_db_password
+
+
+
+Add the tasks to create our database and a user to access it. 
+
+
+		#
+		nano roles/mysql/tasks/main.yml
+
+
+Add the following contents:
+
+
+		#
+		#
+		---
+		- name: Create mysql database
+		  mysql_db: name={{ wp_mysql_db }} state=present
+
+		- name: Create mysql user
+		  mysql_user: 
+			name={{ wp_mysql_user }} 
+			password={{ wp_mysql_password }} 
+			priv=*.*:ALL
+
+
+This role does the following:
+
+
+
+    - Create a MySQL database
+    - Create a MySQL user
+    - Give that user access to our database
+
+
+The variables are pulled in automatically from our earlier file, so you don't have to change anything here.
+
+You might be interested in encrypting your password. Ansible provides ansible-vault as a utility for this, but a full discussion of ansible-vault is beyond the scope of this tutorial.
+
+
+WordPress
+---
+
+And now, the moment we've all been waiting for... WordPress!
+
+With the server requirements installed, we can set up WordPress. We'll be editing the wordpress role.
+
+We're adding a few different tasks to the roles/wordpress/tasks/main.yml file, so keep it open for this section.
+
+
+		#
+		$ nano roles/wordpress/tasks/main.yml
+
+
+
+First we need to download WordPress to the /tmp directory (the security-conscious among you will notice that we have disabled certificate validation, which would interrupt the download):
+
+
+		#
+		---
+		- name: Download WordPress  get_url: 
+			url=https://wordpress.org/latest.tar.gz 
+			dest=/tmp/wordpress.tar.gz
+			validate_certs=no 
+			sudo: yes
+
+
+
+Once downloaded, we extract the gzip file to /var/www, the location that Apache uses for storing web content: 
+
+
+		#
+		- name: Extract WordPress  unarchive: src=/tmp/wordpress.tar.gz dest=/var/www/ copy=no 
+		  sudo: yes
+
+
+
+With the files extracted, let's update Apache's default site document root to point to our WordPress site:
+
+
+		#
+		- name: Update default Apache site
+		  sudo: yes
+		  lineinfile: 
+			dest=/etc/apache2/sites-enabled/000-default.conf 
+			regexp="(.)+DocumentRoot /var/www/html"
+			line="DocumentRoot /var/www/wordpress"
+		  notify:
+			- restart apache
+		  sudo: yes
+
+
+This will update the DocumentRoot for Apache's default site to point to the WordPress files that we downloaded at /var/www/wordpress
+
+You'll notice here that we've added a notify block. This is used when you need to perform tasks such as restarting services after a task has successfully completed. notify handlers will only be notified if our task is changed.
+
+We need to add our handler for restart apache. Save what you have so far, and open roles/wordpress/handlers/main.yml for editing:
+
+
+		#
+		nano roles/wordpress/handlers/main.yml
+
+
+Add these contents:
+
+
+		#
+		#
+		---
+		- name: restart apache
+		  service: name=apache2 state=restarted
+		  sudo: yes      
+
+
+This handler will be called when a task that specifies notify: restart apache is changed, causing the server to restart Apache.
+
+
+Configuring WordPress
+---
+
+Back to roles/wordpress/tasks/main.yml.
+
+Finally, we need to do some configuration for our WordPress site:
+
+First, we copy the sample config file:
+
+
+		#
+		- name: Copy sample config file
+		  command: mv /var/www/wordpress/wp-config-sample.php /var/www/wordpress/wp-config.php creates=/var/www/wordpress/wp-config.php
+		  sudo: yes
+
+
+Update some of the constants in this file to match our database information:
+
+
+		#
+		- name: Update WordPress config file
+		  lineinfile:
+			dest=/var/www/wordpress/wp-config.php
+			regexp="{{ item.regexp }}"
+			line="{{ item.line }}"
+		  with_items:
+			- {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+			- {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+			- {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+		  sudo: yes   
+
+
+This task will find the lines containing: DB_NAME, DB_USER, and DB_PASSWORD in our config file and replace them with the variables from our playbook.
+
+After successfully completing the steps above, our wordpress role will contain two files of interest.
+
+Here's the complete tasks file for WordPress:
+
+
+		#
+		#
+		---
+		- name: Download WordPress  get_url: 
+			url=https://wordpress.org/latest.tar.gz 
+			dest=/tmp/wordpress.tar.gz
+			validate_certs=no
+
+		- name: Extract WordPress  unarchive: src=/tmp/wordpress.tar.gz dest=/var/www/ copy=no
+		  sudo: yes
+
+		- name: Update default Apache site
+		  sudo: yes
+		  lineinfile: 
+			dest=/etc/apache2/sites-enabled/000-default.conf 
+			regexp="(.)+DocumentRoot /var/www/html"
+			line="DocumentRoot /var/www/wordpress"
+		  notify:
+			- restart apache
+
+		- name: Copy sample config file
+		  command: mv /var/www/wordpress/wp-config-sample.php /var/www/wordpress/wp-config.php creates=/var/www/wordpress/wp-config.php
+		  sudo: yes
+
+		- name: Update WordPress config file
+		  lineinfile:
+			dest=/var/www/wordpress/wp-config.php
+			regexp="{{ item.regexp }}"
+			line="{{ item.line }}"
+		  with_items:
+			- {'regexp': "define\\('DB_NAME', '(.)+'\\);", 'line': "define('DB_NAME', '{{wp_mysql_db}}');"}        
+			- {'regexp': "define\\('DB_USER', '(.)+'\\);", 'line': "define('DB_USER', '{{wp_mysql_user}}');"}        
+			- {'regexp': "define\\('DB_PASSWORD', '(.)+'\\);", 'line': "define('DB_PASSWORD', '{{wp_mysql_password}}');"}
+		  sudo: yes
+
+
+
+Here's the file for restarting Apache (which you should have created already):
+
+
+		#
+		#
+		---
+		- name: restart apache
+		  service: name=apache2 state=restarted
+		  sudo: yes
+
+
+We're done! Run the playbook one last time to install and configure WordPress:
+
+
+$ ansible-playbook playbook.yml -i hosts -u sammy -K
+~~~
+
+
+You should be able to view your WordPress site online at: http://your_server_ip.
+
+You can complete the manual WordPress site setup from here.
+
+
+Conclusion
+
+Congratulations! You can now install a WordPress site on any Ubuntu 14.04 server with a single command:
+
+    ansible-playbook playbook.yml -i hosts -u sammy -K
+
+All you have to do is add the IP address of your target server to your hosts file and make sure your permissions are set correctly.
+
+Next Steps
+
+This was a very quick intro to get you started with Ansible and WordPress. You might be interested in looking into the following improvements:
+
+    - Explore the Ansible Galaxy and learn how you can host your own roles on the Galaxy
+    - Automate the setup process so that there is no manual configuration of your WordPress site required
+
+
+
+Comments
++++
+
+July 7, 2015
+
+You might want to have a look at our wordpress role for configuring (multiple) wordpress installations
+https://github.com/Oefenweb/ansible-wordpress
+
+August 10, 2015
+
+This is a good intro to Ansible + WordPress. If anyone is looking for a more full-featured setup, Trellis is a set of Ansible playbooks/roles to provision a Ubuntu server with everything you'd need for a production WP site. It can also serve as a good example of more complicated Ansible roles/tasks if you want to roll your own.
+
+https://roots.io/trellis/
+
+
+August 11, 2015
+
+Trellis looks like a pretty complete set of Ansible playbooks for LEMP WP setup. https://github.com/roots/trellis
+
+https://github.com/roots/trellis
