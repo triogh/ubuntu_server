@@ -1,6 +1,0 @@
----
-- name: Install editor related pkgs
-  become: true
-  apt: name={{ item }} state=present
-  with_items:
-    - vim

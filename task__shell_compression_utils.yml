@@ -1,7 +1,0 @@
----
-- name: Install compression/decompression related pkgs
-  become: true
-  apt: name={{ item }} state=present
-  with_items:
-    - rar
-    - unzip

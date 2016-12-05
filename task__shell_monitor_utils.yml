@@ -1,8 +1,0 @@
----
-- name: Install monitor utils shell related pkgs
-  become: true
-  apt: name={{ item }} state=present
-  with_items:
-    - nload
-    - htop
-    - dstat

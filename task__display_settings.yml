@@ -1,7 +1,0 @@
----
-- name: Install display settings related pkgs
-  become: true
-  apt: name={{ item }} state=present
-  with_items:
-    - redshift
-    - xbacklight

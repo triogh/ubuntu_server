@@ -1,7 +1,0 @@
----
-- name: Install firewall related pkgs
-  become: true
-  apt: name={{ item }} state=present
-  with_items:
-    - ufw
-    - fail2ban

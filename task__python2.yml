@@ -1,7 +1,0 @@
----
-- name: Install python2 related pkgs
-  become: true
-  apt: name={{ item }} state=present
-  with_items:
-    - python-pip # https://pypi.python.org/pypi 
-    - ipython

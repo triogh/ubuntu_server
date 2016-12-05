@@ -4,6 +4,6 @@
   connection: local
   gather_facts: yes
   vars_files:
-    - "{{ ansible_env.HOME }}/my_ansible_external_vars.yml" 
+    - "{{ ansible_env.HOME }}/.my_ansible_vars_files/vars_for__template__etc_network_interfaces.yml" 
   roles:
     - role: common
