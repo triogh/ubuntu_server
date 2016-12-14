@@ -1,0 +1,4 @@
+- name: Creates vars file/s in "{{ ansible_env.HOME }}/.my_ansible_vars_files"
+  get_url:
+    url: https://raw.githubusercontent.com/triogh/ubuntu_server/master/vars__base_template_my_ansible_external_vars.yml
+    dest: "{{ ansible_env.HOME }}/.my_ansible_vars_files/vars_for__template__etc_network_interfaces.yml"

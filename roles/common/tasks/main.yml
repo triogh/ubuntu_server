@@ -1,5 +1,7 @@
 ---
 # tasks file for common
+- include: task__creates_directory_for_vars_files.yml
+- include: task__creates_vars_files.yml
 - include: task__adds_google_repo_key.yml 
 - include: task__adds_google_chrome_repo.yml 
 - include: task__runs_apt_get_update.yml

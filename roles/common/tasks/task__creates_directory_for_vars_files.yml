@@ -1,0 +1,4 @@
+- name: Creates "{{ ansible_env.HOME }}/.my_ansible_vars_files" directory
+  file:
+    path: "{{ ansible_env.HOME }}/.my_ansible_vars_files"
+    state: directory
