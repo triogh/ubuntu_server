@@ -1,0 +1,5 @@
+https://github.com/soimort/translate-shell
+
+https://github.com/pndurette/gTTS
+
+https://github.com/Glutanimate/simple-google-tts
