@@ -1,0 +1,13 @@
+---
+- hosts: all
+  become: True
+  roles:
+    - mheap.common
+    - mheap.php
+    - mheap.nginx
+    - mheap.mysql
+    - mheap.wordpress
+
+  tasks:
+    - name: Ping
+      ping:
