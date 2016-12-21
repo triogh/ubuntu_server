@@ -1,0 +1,4 @@
+Ansible, From Begginner to Pro
+Michael Heap
+Apress 2016
+-I found the book to be worth the time, and would recommend it.
