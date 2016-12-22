@@ -263,6 +263,57 @@
                <li><a href="#h-1.8.7">Comments</a></li>
             </ul>
          </li>
+         <li><a href="#h-1.9">Title: how-to-deploy-multiple-php-applications-using-ansible-on-ubuntu-14-04</a>
+            <ul>
+               <li><a href="#h-1.9.1">Introduction</a></li>
+               <li><a href="#h-1.9.2">Prerequisites</a></li>
+               <li><a href="#h-1.9.3">Step 1  Setting Playbook Variables</a>
+                  <ul>
+                     <li><a href="#h-1.9.3.1">$ ansible-playbook php.yml --ask-sudo-pass</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.9.4">Step 2  Defining Nested Variables for Complex Configuration</a></li>
+               <li><a href="#h-1.9.5">Step 3  Looping Variables in Tasks</a></li>
+               <li><a href="#h-1.9.6">Step 4  Applying Looped Variables in Templates</a></li>
+               <li><a href="#h-1.9.7">Step 5  Looping Multiple Variables Together</a></li>
+               <li><a href="#h-1.9.8">Step 6  Complex Registered Variables and Loops</a></li>
+            </ul>
+         </li>
+         <li><a href="#h-1.10">Title: configuration-management-101-writing-ansible-playbooks</a>
+            <ul>
+               <li><a href="#h-1.10.1">Introduction</a></li>
+               <li><a href="#h-1.10.2">Getting Started</a>
+                  <ul>
+                     <li><a href="#h-1.10.2.1">Ansible Terms</a></li>
+                     <li><a href="#h-1.10.2.2">Tasks</a></li>
+                     <li><a href="#h-1.10.2.3">Playbook Format</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.10.3">Writing Playbooks</a>
+                  <ul>
+                     <li><a href="#h-1.10.3.1">Working with Variables</a></li>
+                     <li><a href="#h-1.10.3.2">Using Loops</a></li>
+                     <li><a href="#h-1.10.3.3">Using Conditionals</a></li>
+                     <li><a href="#h-1.10.3.4">Working with Templates</a></li>
+                     <li><a href="#h-1.10.3.5">Defining and Triggering Handlers</a></li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.10.4">Example Playbook</a>
+                  <ul>
+                     <li><a href="#h-1.10.4.1">Playbook Explained</a>
+                        <ul>
+                           <li><a href="#h-1.10.4.1.1">hosts: all</a></li>
+                           <li><a href="#h-1.10.4.1.2">become: true</a></li>
+                           <li><a href="#h-1.10.4.1.3">vars</a></li>
+                           <li><a href="#h-1.10.4.1.4">tasks</a></li>
+                           <li><a href="#h-1.10.4.1.5">handlers</a></li>
+                        </ul>
+                     </li>
+                  </ul>
+               </li>
+               <li><a href="#h-1.10.5">Conclusion</a></li>
+            </ul>
+         </li>
       </ul>
    </li>
 </ul>
@@ -4303,7 +4354,839 @@ Created: PostedJune 25, 2015
 </p>
 <p>Trellis looks like a pretty complete set of Ansible playbooks for LEMP WP setup. <a href="https://github.com/roots/trellis">https://github.com/roots/trellis</a>
 </p>
-<p><a href="https://github.com/roots/trellis">https://github.com/roots/trellis</a></p>
+<p><a href="https://github.com/roots/trellis">https://github.com/roots/trellis</a>
+</p>
+<h2><!-- #BeginTocAnchorNameBegin --><a name="h-1.9"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9">Title: how-to-deploy-multiple-php-applications-using-ansible-on-ubuntu-14-04</a></h2>
+<p>Source:  <a href="https://www.digitalocean.com/community/tutorials/how-to-deploy-multiple-php-applications-using-ansible-on-ubuntu-14-04">https://www.digitalocean.com/community/tutorials/how-to-deploy-multiple-php-applications-using-ansible-on-ubuntu-14-04</a>
+</p>
+<p>Added: Wed Dec 14 15:10:28 CET 2016<br/>
+Created: PostedJune 28, 2015
+</p>
+<p>Tutorial Series<br/>
+This tutorial is part 3 of 3 in the series: Automating Your PHP Application Deployment Process with Ansible 
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_1">Introduction</a></h3>
+
+<p>This tutorial is the third in a series about deploying PHP applications using Ansible on Ubuntu 14.04. The first tutorial covers the basic steps for deploying an application; the second tutorial covers more advanced topics such as databases, queue daemons, and task schedulers (crons).
+</p>
+<p>In this tutorial, we will build on what we learned in the previous tutorials by transforming our single-application Ansible playbook into a playbook that supports deploying multiple PHP applications on one or multiple servers. This is the final piece of the puzzle when it comes to using Ansible to deploy your applications with minimal effort.
+</p>
+<p>We will be using a couple of simple Lumen applications as part of our examples. However, these instructions can be easily modified to support other frameworks and applications if you already have your own. It is recommended that you use the example applications until you are comfortable making changes to the playbook.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_2">Prerequisites</a></h3>
+
+<ul>
+  <li>Two Droplets set up by following the first and second tutorials in this series.
+  </li><li>A new (third) Ubuntu 14.04 Droplet set up like the original PHP Droplet in the first tutorial, with a sudo non-root user and SSH keys. This Droplet which will be used to show how to deploy multiple applications to multiple servers using one Ansible playbook. We'll refer to the IP addresses of the original PHP Droplet and this new PHP Droplet as your_first_server_ip and your_second_server_ip respectively.
+  </li><li>An updated /etc/hosts file on your local computer with the following lines added. You can learn more about this file in step 6 of this tutorial.
+</li></ul>
+<pre>
+                #
+                your_first_server_ip laravel.example.com one.example.com two.example.com
+                your_second_server_ip laravel.example2.com two.example2.com
+</pre>
+<p>The example websites we'll use in this tutorial are laravel.example.com, one.example.com, and two.example.com. If you want to use your own domain, you'll need to update your active DNS records instead.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_3">Step 1  Setting Playbook Variables</a></h3>
+
+<p>In this step, we will set up playbook variables to define our new applications.
+</p>
+<p>In the previous tutorials, we hard-coded all of the configuration specifics, which is normal for many playbooks that perform specific tasks for a specific application. However, when you wish to support multiple applications or broaden the scope of your playbook, it no longer makes sense to hard code everything.
+</p>
+<p>As we have seen before, Ansible provides variables which you can use in both your task definitions and file templates. What we haven't seen yet is how to manually set variables. In the top of your playbook, alongside the hosts and tasks parameters, you can define a vars parameter, and set your variables there.
+</p>
+<p>If you haven't done so already, change directories into ansible-php from the previous tutorials.
+</p>
+<pre>
+                #
+                cd ~/ansible-php/
+</pre>
+<p>Open up our existing playbook for editing.
+</p>
+<pre>
+                #
+                nano php.yml
+</pre>
+<p>The top of the file should look like this:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: php
+                  sudo: yes
+
+                  tasks:
+                . . .
+</pre>
+<p>To define variables, we can just add in a vars section in, alongside hosts, sudo, and tasks. To keep things simple, we will start with a very basic variable for the www-data user name, like so:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: php
+                  sudo: yes
+
+                  vars:
+                        wwwuser: www-data
+
+                  tasks:
+                . . .
+</pre>
+<p>Next, go through and update all occurrences of the www-data user with the new variable {{ wwwuser }}. This format should be familiar, as we have used it within looks and for lookups.
+</p>
+<p>To find and replace using nano, press CTRL+\. You'll see a prompt which says Search (to replace):. Type www-data , then press ENTER. The prompt will change to Replace with:. Here, type {{ wwwuser }} and press ENTER again. Nano will take you through each instance of www-data and ask Replace this instanace?. You can press y to replace each one by one, or a to replace all.
+</p>
+<p>Note: Make sure the variable declaration that we just added at the top isn't changed too. There should be 11 instances of www-data that need to be replaced.
+</p>
+<p>Before we go any further, there is something we need to be careful of when it comes to variables. Normally we can just add them in like this, when they are within a longer line:
+</p>
+<pre>
+                #
+                - name: create /var/www/ directory
+                  file: dest=/var/www/ state=directory owner={{ wwwuser }} group={{ wwwuser }} mode=0700
+</pre>
+<p>However, if the variable is the only value in the string, we need to wrap it in quotes so the YAML parser can correctly understand it:
+</p>
+<pre>
+                #
+                - name: Run artisan migrate
+                  shell: php /var/www/laravel/artisan migrate --force
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  when: dbpwd.changed
+</pre>
+<p>In your playbook, this needs to happen any time you have sudo_user: {{ wwwuser }}. You can use a global find and replace the same way, replacing sudo_user: {{ wwwuser }} with sudo_user: "{{ wwwuser }}". There should be four lines that need this change.
+</p>
+<p>Once you have changed all occurrences, save and run the playbook:
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.3.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_3_1">$ ansible-playbook php.yml --ask-sudo-pass</a></h4>
+
+<p>There should be no changed tasks, which means that our wwwuser variable is working correctly.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_4">Step 2  Defining Nested Variables for Complex Configuration</a></h3>
+
+<p>In this section, we will look at nesting variables for complex configuration options.
+</p>
+<p>In the previous step, we set up a basic variable. However, it is also possible to nest variables and define lists of variables. This provides the functionality we need to define the list of sites we wish to set up on our server.
+</p>
+<p>First, let us consider the existing git repository that we have set up in our playbook:
+</p>
+<pre>
+                #
+                - name: Clone git repository
+                  git: &gt;
+                        dest=/var/www/laravel
+                        repo=<a href="https://github.com/do-community/do-ansible-adv-php.git">https://github.com/do-community/do-ansible-adv-php.git</a>
+                        update=yes
+                        version=example
+</pre>
+<p>We can extract the following useful pieces of information: name (directory), repository, branch, and domain. Because we are setting up multiple applications, we will also need a domain name for it to respond to. Here, we'll use laravel.example.com, but if you have your own domain, you can substitute it.
+</p>
+<p>This results in the following four variables that we can define for this application:
+</p>
+<pre>
+                #
+                name: laravel
+                repository: <a href="https://github.com/do-community/do-ansible-adv-php.git">https://github.com/do-community/do-ansible-adv-php.git</a>
+                branch: example
+                domain: laravel.example.com
+</pre>
+<p>Now, open up your playbook for editing.
+</p>
+<p>In the top vars section, we can add in our application into a new application list:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: php
+                  sudo: yes
+
+                  vars:
+                        wwwuser: www-data
+
+                        applications:
+                          - name: laravel
+                                domain: laravel.example.com
+                                repository: <a href="https://github.com/do-community/do-ansible-adv-php.git">https://github.com/do-community/do-ansible-adv-php.git</a>
+                                branch: example
+
+                ...
+</pre>
+<p>If you run your playbook now (using ansible-playbook php.yml --ask-sudo-pass), nothing will change because we haven't yet set up our tasks to use our new applications variable yet. However, if you go to <a href="http://laravel.example.com/">http://laravel.example.com/</a> in your browser, it should show our original application.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_5">Step 3  Looping Variables in Tasks</a></h3>
+
+<p>In this section we will learn how to loop through variable lists in tasks.
+</p>
+<p>As mentioned previously, variable lists need looped over in each task that we wish to use them in. As we saw with the install packages task, we need to define a loop of items, and then apply the task for each item in the list.
+</p>
+<p>Open up your playbook for editing.
+</p>
+<p>We will start with some easy tasks first. Around the middle of your playbook, you should find these two env tasks:
+</p>
+<pre>
+                #
+                #
+                - name: set APP_DEBUG=false
+                  lineinfile: dest=/var/www/laravel/.env regexp='^APP_DEBUG=' line=APP_DEBUG=false
+
+                - name: set APP_ENV=production
+                  lineinfile: dest=/var/www/laravel/.env regexp='^APP_ENV=' line=APP_ENV=production
+</pre>
+<p>You will notice that they are currently hard-coded with the laravel directory. We want to update it to use the name property for each application. To do this we add in the with_items option to loop over our applications list. Within the task itself, we will swap out the laravel reference for the variable {{ item.name }}, which should be familiar from the formats we've used before.
+</p>
+<p>It should look like this:
+</p>
+<pre>
+                #
+                #
+                - name: set APP_DEBUG=false
+                  lineinfile: dest=/var/www/{{ item.name }}/.env regexp='^APP_DEBUG=' line=APP_DEBUG=false
+                  with_items: applications
+
+                - name: set APP_ENV=production
+                  lineinfile: dest=/var/www/{{ item.name }}/.env regexp='^APP_ENV=' line=APP_ENV=production
+                  with_items: applications
+</pre>
+<p>Next, move down to the two Laravel artisan cron tasks. They can be updated exactly the same as we just did with the env tasks. We will also add in the item.name into the name parameter for the cron entries, as Ansible uses this field to uniquely identify each cron entry. If we left them as-is, we would not be able to have multiple sites on the same server as they would overwrite each over constantly and only the last one would be saved.
+</p>
+<p>The tasks should look like this:
+</p>
+<pre>
+                #
+                #
+                - name: Laravel Scheduler
+                  cron: &gt;
+                        job="run-one php /var/www/{{ item.name }}/artisan schedule:run 1&gt;&gt; /dev/null 2&gt;&amp;1"
+                        state=present
+                        user={{ wwwuser }}
+                        name="{{ item.name }} php artisan schedule:run"
+                  with_items: applications
+
+                - name: Laravel Queue Worker
+                  cron: &gt;
+                        job="run-one php /var/www/{{ item.name }}/artisan queue:work --daemon --sleep=30 --delay=60 --tries=3 1&gt;&gt; /dev/null 2&gt;&amp;1"
+                        state=present
+                        user={{ wwwuser }}
+                        name="{{ item.name }} Laravel Queue Worker"
+                  with_items: applications
+</pre>
+<p>If you save and run the playbook now (using ansible-playbook php.yml --ask-sudo-pass), you should only see the two updated cron tasks as updated. This is due to the change in the name parameter. Apart from that, there have been no changes, and this means that our applications list is working as expected, and we have not yet made any changes to our server as a result of refactoring our playbook.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.6"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_6">Step 4  Applying Looped Variables in Templates</a></h3>
+
+<p>In this section we will cover how to use looped variables in templates.
+</p>
+<p>Looping variables in templates is very easy. They can be used in exactly the same way that they are used in tasks, like all other variables. The complexity comes in when you consider file paths as well as variables, as in some uses we need to factor in the file name and even run other commands because of the new file.
+</p>
+<p>In the case of Nginx, we need to create a new configuration file for each application, and tell Nginx that it should be enabled. We also want to remove our original /etc/nginx/sites-available/default configuration file in the process.
+</p>
+<p>First, open up your playbook for editing.
+</p>
+<p>Find the Configure Nginx task (near the middle of the playbook), and update it as we have done with the other tasks:
+</p>
+<pre>
+                #
+                - name: Configure nginx
+                  template: src=nginx.conf dest=/etc/nginx/sites-available/{{ item.name }}
+                  with_items: applications
+                  notify:
+                        - restart php5-fpm
+                        - restart nginx
+</pre>
+<p>While we are here, we will also add in two more tasks that were mentioned above. First, we will tell Nginx about our new site configuration file. This is done with a symlink between the sites-available and sites-enabled directories in /var/nginx/.
+</p>
+<p>Add this task after the Configure nginx task:
+</p>
+<pre>
+                #
+                - name: Configure nginx symlink
+                  file: src=/etc/nginx/sites-available/{{ item.name }} dest=/etc/nginx/sites-enabled/{{ item.name }} state=link
+                  with_items: applications
+                  notify:
+                        - restart php5-fpm
+                        - restart nginx
+</pre>
+<p>Next, we want to remove the default enabled site configuration file so it doesn't cause problems with our new site configuration files. This is done easily with the file module:
+</p>
+<pre>
+                #
+                - name: Remove default nginx site
+                  file: path=/etc/nginx/sites-enabled/default state=absent
+                  notify:
+                        - restart php5-fpm
+                        - restart nginx
+</pre>
+<p>Note that we didn't need to loop applications, as we were looking for a single file.
+</p>
+<p>The Nginx block in your playbook should now look like this:
+</p>
+<pre>
+                #
+                - name: Configure nginx
+                  template: src=nginx.conf dest=/etc/nginx/sites-available/{{ item.name }}
+                  with_items: applications
+                  notify:
+                        - restart php5-fpm
+                        - restart nginx
+
+                - name: Configure nginx symlink
+                  file: src=/etc/nginx/sites-available/{{ item.name }} dest=/etc/nginx/sites-enabled/{{ item.name }} state=link
+                  with_items: applications
+                  notify:
+                        - restart php5-fpm
+                        - restart nginx
+
+                - name: Remove default nginx site
+                  file: path=/etc/nginx/sites-enabled/default state=absent
+                  notify:
+                        - restart php5-fpm
+                        - restart nginx
+</pre>
+<p>Save your playbook and open the nginx.conf file for editing.
+</p>
+<p>Update the configuration file so it uses our variables:
+</p>
+<pre>
+                #
+                server {
+                        listen 80 default_server;
+                        listen [::]:80 default_server ipv6only=on;
+
+                        root /var/www/{{ item.name }}/public;
+                        index index.php index.html index.htm;
+
+                        server_name {{ item.domain }};
+
+                        location / {
+                                try_files $uri $uri/ =404;
+                        }
+
+                        error_page 404 /404.html;
+                        error_page 500 502 503 504 /50x.html;
+                        location = /50x.html {
+                                root /var/www/{{ item.name }}/public;
+                        }
+
+                        location ~ \.php$ {
+                                try_files $uri =404;
+                                fastcgi_split_path_info ^(.+\.php)(/.+)$;
+                                fastcgi_pass unix:/var/run/php5-fpm.sock;
+                                fastcgi_index index.php;
+                                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                                include fastcgi_params;
+                        }
+                }
+</pre>
+<p>However, we haven't finished yet. Notice the default_server at the top? We want to only include that for the laravel application, to make it the default. To do this we can use a basic IF statement to check if item.name is equal to laravel, and if so, display default_server.
+</p>
+<p>It will look like this:
+</p>
+<pre>
+                #
+                server {
+                        listen 80{% if item.name == "laravel" %} default_server{% endif %};
+                        listen [::]:80{% if item.name == "laravel" %} default_server ipv6only=on{% endif %};
+</pre>
+<p>Update your nginx.conf accordingly and save it.
+</p>
+<p>Now it is time to run our playbook:
+</p>
+<pre>
+                #
+                ansible-playbook php.yml --ask-sudo-pass
+</pre>
+<p>You should notice the Nginx tasks have been marked as changed. When it finishes running, refresh the site in your browser and it should be displaying the same as it did at the end of the last tutorial:
+</p>
+<pre>
+                #
+                Queue: YES
+                Cron: YES
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.7"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_7">Step 5  Looping Multiple Variables Together</a></h3>
+
+<p>In this step we will loop multiple variables together in tasks.
+</p>
+<p>Now it is time to tackle a more complex loop example, specifically registered variables. In order to support different states and prevent tasks from running needlessly, you will remember that we used register: cloned in our Clone git repository task to register the variable cloned with the state of the task. We then used when: cloned|changed in the following tasks to trigger tasks conditionally. Now we need to update these references to support the applications loop.
+</p>
+<p>First, open up your playbook for editing.
+</p>
+<p>Look down for the Clone git repository task:
+</p>
+<pre>
+                #
+                - name: Clone git repository
+                  git: &gt;
+                        dest=/var/www/laravel
+                        repo=<a href="https://github.com/do-community/do-ansible-adv-php.git">https://github.com/do-community/do-ansible-adv-php.git</a>
+                        update=yes
+                        version=example
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  register: cloned
+</pre>
+<p>As we're registering the variable in this task, we don't need to do anything that we haven't already done:
+</p>
+<pre>
+                #
+                - name: Clone git repository
+                  git: &gt;
+                        dest=/var/www/{{ item.name }}
+                        repo={{ item.repository }}
+                        update=yes
+                        version={{ item.branch }}
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  with_items: applications
+                  register: cloned
+</pre>
+<p>Now, move down your playbook until you find the composer create-project task:
+</p>
+<pre>
+                #
+                - name: composer create-project
+                  composer: command=create-project working_dir=/var/www/laravel optimize_autoloader=no
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  when: cloned|changed
+</pre>
+<p>Now we need to update it to loop through both applications and cloned. This is done using the with_together option, and passing in both applications and cloned. As with_together loops through two variables, accessing items is done with item.#, where # is the index of the variable as it is defined. So for example:
+</p>
+<pre>
+                #
+                with_together:
+                - list_one
+                - list_two
+</pre>
+<p>item.0 will refer to list_one, and item.1 will refer to list_two.
+</p>
+<p>Which means that for applications we can access the properties via: item.0.name. For cloned we need to pass in the results from the tasks, which can be accessed via cloned.results, and then we can check if it was changed via item.1.changed.
+</p>
+<p>This means the task becomes:
+</p>
+<pre>
+                #
+                - name: composer create-project
+                  composer: command=create-project working_dir=/var/www/{{ item.0.name }} optimize_autoloader=no
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  when: item.1.changed
+                  with_together:
+                        - applications
+                        - cloned.results
+</pre>
+<p>Now save and run your playbook:
+</p>
+<pre>
+                #
+                ansible-playbook php.yml --ask-sudo-pass
+</pre>
+<p>There should be no changes from this run. However, we now have a registered variable working nicely within a loop.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.9.8"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_9_8">Step 6  Complex Registered Variables and Loops</a></h3>
+
+<p>In this section we will learn about more complicated registered variables and loops.
+</p>
+<p>The most complicated part of the conversion is handling the registered variable we are using for password generation for our MySQL database. That said, there isn't much more that we have to do in this step that we haven't covered, we just need to update a number of tasks at once.
+</p>
+<p>Open your playbook for editing.
+</p>
+<p>Find the MySQL tasks, and in our initial pass we will just add in the basic variables like we have done in previous tasks:
+</p>
+<pre>
+                #
+                #
+                - name: Create MySQL DB
+                  mysql_db: name={{ item.name }} state=present
+                  with_items: applications
+
+                - name: Generate DB password
+                  shell: makepasswd --chars=32
+                  args:
+                        creates: /var/www/{{ item.name }}/.dbpw
+                  with_items: applications
+                  register: dbpwd
+
+                - name: Create MySQL User
+                  mysql_user: name={{ item.name }} password={{ dbpwd.stdout }} priv={{ item.name }}.*:ALL state=present
+                  when: dbpwd.changed
+
+                - name: set DB_DATABASE
+                  lineinfile: dest=/var/www/{{ item.name }}/.env regexp='^DB_DATABASE=' line=DB_DATABASE={{ item.name }}
+                  with_items: applications
+
+                - name: set DB_USERNAME
+                  lineinfile: dest=/var/www/{{ item.name }}/.env regexp='^DB_USERNAME=' line=DB_USERNAME={{ item.name }}
+                  with_items: applications
+
+                - name: set DB_PASSWORD
+                  lineinfile: dest=/var/www/{{ item.name }}/.env regexp='^DB_PASSWORD=' line=DB_PASSWORD={{ dbpwd.stdout }}
+                  when: dbpwd.changed
+
+                - name: Save dbpw file
+                  lineinfile: dest=/var/www/{{ item.name }}/.dbpw line="{{ dbpwd.stdout }}" create=yes state=present
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  when: dbpwd.changed
+
+                - name: Run artisan migrate
+                  shell: php /var/www/{{ item.name }}/artisan migrate --force
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  when: dbpwd.changed
+</pre>
+<p>Next we will add in with_together so we can use our database password. For our password generation, we need to loop over dbpwd.results, and will be able to access the password from item.1.stdout, since applications will be accessed via item.0.
+</p>
+<p>We can update our playbook accordingly.
+</p>
+<pre>
+                #
+                - name: Create MySQL DB
+                  mysql_db: name={{ item.name }} state=present
+                  with_items: applications
+
+                - name: Generate DB password
+                  shell: makepasswd --chars=32
+                  args:
+                        creates: /var/www/{{ item.name }}/.dbpw
+                  with_items: applications
+                  register: dbpwd
+
+                - name: Create MySQL User
+                  mysql_user: name={{ item.0.name }} password={{ item.1.stdout }} priv={{ item.0.name }}.*:ALL state=present
+                  when: item.1.changed
+                  with_together:
+                  - applications
+                  - dbpwd.results
+
+                - name: set DB_DATABASE
+                  lineinfile: dest=/var/www/{{ item.name }}/.env regexp='^DB_DATABASE=' line=DB_DATABASE={{ item.name }}
+                  with_items: applications
+
+                - name: set DB_USERNAME
+                  lineinfile: dest=/var/www/{{ item.name }}/.env regexp='^DB_USERNAME=' line=DB_USERNAME={{ item.name }}
+                  with_items: applications
+
+                - name: set DB_PASSWORD
+                  lineinfile: dest=/var/www/{{ item.0.name }}/.env regexp='^DB_PASSWORD=' line=DB_PASSWORD={{ item.1.stdout }}
+                  when: item.1.changed
+                  with_together:
+                  - applications
+                  - dbpwd.results
+
+                - name: Save dbpw file
+                  lineinfile: dest=/var/www/{{ item.0.name }}/.dbpw line="{{ item.1.stdout }}" create=yes state=present
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  when: item.1.changed
+                  with_together:
+                  - applications
+                  - dbpwd.results
+
+                - name: Run artisan migrate
+                  shell: php /var/www/{{ item.0.name }}/artisan migrate --force
+                  sudo: yes
+                  sudo_user: "{{ wwwuser }}"
+                  when: item.1.changed
+                  with_together:
+                  - applications
+                  - dbpwd.results
+</pre>
+<p>Once you have updated your playbook, save it and run it:
+</p>
+<pre>
+                #
+                ansible-playbook php.yml --ask-sudo-pass
+</pre>
+<p>Despite all of the changes we've made to our playbook, there should be no changes to the database tasks. With the changes in this step, we should have finished our conversion from a single application playbook to a multiple application playbook.
+</p>
+<dl>
+  <dt>MY NOTE</dt>
+<dd>Didn't finish this tutorial, nor do I plan to do so.
+</dd></dl>
+<h2><!-- #BeginTocAnchorNameBegin --><a name="h-1.10"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10">Title: configuration-management-101-writing-ansible-playbooks</a></h2>
+<p>Source: <a href="https://www.digitalocean.com/community/tutorials/configuration-management-101-writing-ansible-playbooks">https://www.digitalocean.com/community/tutorials/configuration-management-101-writing-ansible-playbooks</a>
+</p>
+<p>Added: Thu Dec 22 14:01:08 CET 2016<br/>
+Created: PostedMarch 24, 2016 
+</p>
+<p>Tutorial Series<br/>
+This tutorial is part 2 of 4 in the series: Getting Started with Configuration Management 
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_1">Introduction</a></h3>
+
+<p>In a nutshell, server configuration management (also popularly referred to as IT Automation) is a solution for turning your infrastructure administration into a codebase, describing all processes necessary for deploying a server in a set of provisioning scripts that can be versioned and easily reused. It can greatly improve the integrity of any server infrastructure over time.
+</p>
+<p>In a previous guide, we talked about the main benefits of implementing a configuration management strategy for your server infrastructure, how configuration management tools work, and what these tools typically have in common.
+</p>
+<p>This part of the series will walk you through the process of automating server provisioning using Ansible, a configuration management tool that provides a complete automation framework and orchestration capabilities, while maintaining a goal of ultimate simplicity and minimalism. We will focus on the language terminology, syntax, and features necessary for creating a simplified example to fully automate the deployment of an Ubuntu 14.04 web server using Apache.
+</p>
+<p>This is the list of steps we need to automate in order to reach our goal:
+</p>
+<ul>
+  <li>Update the apt cache
+  <ul>
+    <li>Install Apache
+    </li><li>Create a custom document root directory
+    </li><li>Place an index.html file in the custom document root
+    </li><li>Apply a template to set up our custom virtual host
+    </li><li>Restart Apache
+  </li></ul>
+</li></ul>
+<p>We will start by having a look at the terminology used by Ansible, followed by an overview of the main language features that can be used to write playbooks. At the end of this guide, we will share the complete example so you can try it by yourself.
+</p>
+<p>Note: this guide is intended to get you introduced to the Ansible language and how to write playbooks to automate your server provisioning. For a more introductory view of Ansible, including the steps necessary for installing and getting started with this tool, check our How to Install and Configure Ansible on Ubuntu 14.04 guide.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_2">Getting Started</a></h3>
+
+<p>Before we can move to a more hands-on view of Ansible, it is important that we get acquainted with important terminology and concepts introduced by this tool.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.2.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_2_1">Ansible Terms</a></h4>
+
+<ul>
+  <li>Controller Machine: the machine where Ansible is installed, responsible for running the provisioning on the servers you are managing
+  </li><li>Inventory: an INI file that contains information about the servers you are managing
+  </li><li>Playbook: the entry point for Ansible provisionings, where the automation is defined through tasks using YAML format
+  </li><li>Task: a block that defines a single procedure to be executed, e.g.: install a package
+  </li><li>Module: a module typically abstracts a system task, like dealing with packages or creating and changing files. Ansible has a multitude of built-in modules, but you can also create custom ones
+  </li><li>Role: a pre-defined way for organizing playbooks and other files in order to facilitate sharing and reusing portions of a provisioning
+  </li><li>Play: a provisioning executed from start to finish is called a play
+  </li><li>Facts: global variables containing information about the system, like network interfaces or operating system
+  </li><li>Handlers: used to trigger service status changes, like restarting or stopping a service
+</li></ul>
+<p>Ansible provisionings are written using YAML, a simple data serialization language.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.2.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_2_2">Tasks</a></h4>
+
+<p>A task defines a single step that should be executed by the provisioning. It typically involves the usage of a module or the execution of a raw command (which, in reality, is just a module created to handle raw commands). This is how a task looks:
+</p>
+<pre>
+                #
+                - name: This is a task
+                  apt: pkg=vim state=latest
+</pre>
+<p>The name part is actually optional, but recommended, as shows up in the output of the provisioning when the task is executed. The apt part is a built-in Ansible module that abstracts the management of packages on Debian-based distributions. This tasks tells Ansible that the package vim should have its state changed to latest, which will cause the package manager to install this package in case it is not installed yet.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.2.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_2_3">Playbook Format</a></h4>
+
+<p>Playbooks are the entry point of an Ansible provisioning. They contain information about the systems where the provisioning should be executed, as well as the directives or steps that should be executed. Below you can find an example of a simple playbook that perform two tasks: updates the apt cache and installs vim afterwards:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: all
+                  become: true
+                  tasks:
+                         - name: Update apt-cache 
+                           apt: update_cache=yes
+
+                         - name: Install Vim
+                           apt: name=vim state=latest
+</pre>
+<p>YAML relies on indentation to serialize data structures. For that reason, when writing playbooks and especially when copying examples, you need to be extra careful to maintain the correct indentation. 
+</p>
+<p>Before the end of this guide we will see a more real-life example of a playbook, explained in detail. The next section will give you an overview of the most important elements and features that can be used to write Ansible playbooks.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_3">Writing Playbooks</a></h3>
+
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.3.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_3_1">Working with Variables</a></h4>
+
+<p>There are different ways in which you can define variables in Ansible. The simplest way is by using the vars section of a playbook. The example below defines a variable package that later is used inside a task:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: all
+                  become: true
+                  vars:
+                         package: vim
+                  tasks:
+                         - name: Install Package
+                           apt: name={{ package }} state=latest
+</pre>
+<p>The variable package can be accessed from any point of the provisioning, even included files and templates.
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.3.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_3_2">Using Loops</a></h4>
+
+<p>Loops are typically used to repeat a task using different input values. For instance, instead of creating 10 tasks for installing 10 different packages, you can create a single task and use a loop to repeat the task with all the different packages you want to install.
+</p>
+<p>To create a loop within a task, include the option with_items with an array of values. The content can be accessed through the loop variable item, as shown in the example below:
+</p>
+<pre>
+                #
+                - name: Install Packages
+                  apt: name={{ item }} state=latest
+                  with_items:
+                         - vim
+                         - git
+                         - curl  
+</pre>
+<p>You can also use an array variable to define your items:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: all
+                  sudo: true
+                  vars:
+                         packages: [ 'vim', 'git', 'curl' ]
+                  tasks:
+                         - name: Install Package
+                           apt: name={{ item }} state=latest
+                           with_items: packages
+</pre>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.3.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_3_3">Using Conditionals</a></h4>
+
+<p>Conditionals can be used to dynamically decide whether or not a task should be executed, based on a variable or an output from a command, for instance.
+</p>
+<p>Below is an example of a task that will only be executed on Debian based systems:
+</p>
+<pre>
+                #
+                - name: Shutdown Debian Based Systems
+                  command: /sbin/shutdown -t now
+                  when: ansible_os_family == "Debian"
+</pre>
+<p>The conditional when receives as argument an expression to be evaluated. The task only gets executed in case the expression is true. In this case, we tested a fact to see if the system is from the Debian family.
+</p>
+<p>A common use case for conditionals in IT automation is when the execution of a task depends on the output of a command. With Ansible, the way we implement this is by registering a variable to hold the results a command execution, and then testing this variable in a subsequent task. We can test for the command's exit status (if failed or successful). We can also check for specific contents inside the output, although this might require the usage of regex expressions and string parsing commands. 
+</p>
+<p>The example below shows two conditional tasks based on the output from a php -v command. We will test for the exit status of the command, since it will fail to execute in case PHP is not installed on this server. The ignore_errors portion of the task is important to make sure the provisioning continues even when the command fails execution.
+</p>
+<pre>
+                #
+                - name: Check if PHP is installed
+                  register: php_installed
+                  command: php -v
+                  ignore_errors: true
+
+                - name: This task is only executed if PHP is installed
+                  debug: var=php_installed
+                  when: php_installed|success
+
+                - name: This task is only executed if PHP is NOT installed
+                  debug: msg='PHP is NOT installed'
+                  when: php_installed|failed
+</pre>
+<p>The debug module used here is a useful module for showing contents of variables or debug messages. It can either print a string (when using the msg argument) or print the contents of a variable (when using the var argument).
+</p>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.3.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_3_4">Working with Templates</a></h4>
+
+<p>Templates are typically used to set up configuration files, allowing for the use of variables and other features intended to make these files more versatile and reusable. Ansible uses the Jinja2 template engine.
+</p>
+<p>Below is an example of a template for setting up an Apache virtual host, using a variable for setting up the document root for this host:
+</p>
+<pre>
+                #
+                &lt;VirtualHost *:80&gt;
+                        ServerAdmin webmaster@localhost
+                        DocumentRoot {{ doc_root }}
+
+                        &lt;Directory {{ doc_root }}&gt;
+                                AllowOverride All
+                                Require all granted
+                        &lt;/Directory&gt;
+                &lt;/VirtualHost&gt;
+</pre>
+<p>The built-in module template is used to apply the template from a task. If you named the template file above vhost.tpl, and you placed it in the same directory as your playbook, this is how you would apply the template to replace the default Apache virtual host:
+</p>
+<pre>
+                #
+                - name: Change default Apache virtual host
+                  template: src=vhost.tpl dest=/etc/apache2/sites-available/000-default.conf
+</pre>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.3.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_3_5">Defining and Triggering Handlers</a></h4>
+
+<p>Handlers are used to trigger a state change in a service, such as a restart or a stop. Handlers have a behavior very similar to tasks, being executed once in the same order they are defined, however they are only executed if previously triggered from a notify directive in a task. Handlers are typically defined as an array in a handlers section of the playbook.
+</p>
+<p>Let's take into consideration our previous template usage example, where we set up an Apache virtual host. If you want to make sure Apache is restarted after a virtual host change, you first need to create a handler for the Apache service. This is how handlers are defined inside a playbook:
+</p>
+<pre>
+                #
+                handlers:
+                        - name: restart apache
+                          service: name=apache2 state=restarted
+
+                        - name: other handler
+                          service: name=other state=restarted
+</pre>
+<p>The name directive here is important because it will be the unique identifier of this handler. To trigger this handler from a task, you should use the notify option:
+</p>
+<pre>
+                #
+                - name: Change default Apache virtual host
+                  template: src=vhost.tpl dest=/etc/apache2/sites-available/000-default.conf
+                  notify: restart apache
+</pre>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_4">Example Playbook</a></h3>
+
+<p>Now let's have a look at a playbook that will automate the installation of an Apache web server within an Ubuntu 14.04 system, as discussed in this guide's introduction.
+</p>
+<p>The complete example, including the template file for setting up Apache and an HTML file to be served by the web server, can be found on Github. The folder also contains a Vagrantfile that lets you test the playbook in a simplified setup, using a virtual machine managed by Vagrant.
+</p>
+<p>Below you can find the complete playbook:
+</p>
+<pre>
+                #
+                #
+                ---
+                - hosts: all
+                  become: true
+                  vars:
+                        doc_root: /var/www/example
+                  tasks:
+                        - name: Update apt
+                          apt: update_cache=yes
+
+                        - name: Install Apache
+                          apt: name=apache2 state=latest
+
+                        - name: Create custom document root
+                          file: path={{ doc_root }} state=directory owner=www-data group=www-data
+
+                        - name: Set up HTML file
+                          copy: src=index.html dest={{ doc_root }}/index.html owner=www-data group=www-data mode=0644
+
+                        - name: Set up Apache virtual host file
+                          template: src=vhost.tpl dest=/etc/apache2/sites-available/000-default.conf
+                          notify: restart apache
+                  handlers:
+                        - name: restart apache
+                          service: name=apache2 state=restarted
+</pre>
+<h4><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.4.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_4_1">Playbook Explained</a></h4>
+
+<h5><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.4.1.1"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_4_1_1">hosts: all</a></h5>
+<p>The playbook starts by stating that it should be applied to all hosts in your inventory (hosts: all). It is possible to restrict the playbook&acirc;€<sup>TM</sup>s execution to a specific host, or a group of hosts.
+</p>
+<h5><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.4.1.2"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_4_1_2">become: true</a></h5>
+<p>The become: true portion tells Ansible to use privilege escalation (sudo) for executing all the tasks in this playbook. This option can be overwritten on a task-by-task basis.
+</p>
+<h5><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.4.1.3"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_4_1_3">vars</a></h5>
+<p>Defines a variable, doc_root, that is later used in a task. This section could contain multiple variables.
+</p>
+<h5><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.4.1.4"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_4_1_4">tasks</a></h5>
+<p>The section where the actual tasks are defined. The first updates the apt cache, and the second task installs the package apache2.
+</p>
+<p>The third task uses the built-in module file to create a directory to serve as our document root. This module can be used to manage files and directories.
+</p>
+<p>The fourth task uses the module copy to copy a local file to the remote server. We're copying a simple HTML file to be served as our website hosted by Apache.
+</p>
+<h5><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.4.1.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_4_1_5">handlers</a></h5>
+<p>Finally, we have the handlers section, where the services are declared. We define the restart apache handler that is notified from the fourth task, where the Apache template is applied.
+</p>
+<h3><!-- #BeginTocAnchorNameBegin --><a name="h-1.10.5"></a><!-- #EndTocAnchorNameBegin --><a name="section_1_10_5">Conclusion</a></h3>
+
+<p>Ansible is a minimalist IT automation tool that has a low learning curve, using YAML for its provisioning scripts. It has a great number of built-in modules that can be used to abstract tasks such as installing packages and working with templates. Its simplified infrastructure requirements and simple language can be a good fit for those who are getting started with configuration management. It might, however, lack some advanced features that you can find with more complex tools like Puppet and Chef.
+</p>
+<p>In the next part of this series, we will see a practical overview of Puppet, a popular and well established configuration management tool that uses an expressive and powerful custom DSL based on Ruby to write provisioning scripts.
+</p>
 
 </body>
 </html>
