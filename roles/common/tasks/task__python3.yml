@@ -11,3 +11,4 @@
     - ipython3
     - libssl-dev 
     - libffi-dev
+    - python3-tk

@@ -5,3 +5,4 @@
   with_items:
     - python-pip # https://pypi.python.org/pypi 
     - ipython
+    - python-tk
