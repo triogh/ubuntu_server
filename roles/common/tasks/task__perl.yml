@@ -8,3 +8,4 @@
     - cpanminus
     - perltidy
     - html2text
+    - libperl-critic-perl
