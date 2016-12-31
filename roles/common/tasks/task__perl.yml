@@ -9,3 +9,7 @@
     - perltidy
     - html2text
     - libperl-critic-perl
+    #
+    # perl -d:ptkdb <script_name.pl>
+    - libdevel-ptkdb-perl
+    - perl-tk
