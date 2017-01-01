@@ -1,0 +1,17 @@
+---
+- name: Install programingIDE related pkgs
+  become: true
+  apt: name={{ item }} state=present
+  with_items:
+    - eclipse-platform
+    #
+    # useful additional modules (manual install for now) 
+    # 
+    # EPIC for Perl (has excellent debugger capabilities)
+    # http://www.epic-ide.org/
+    #
+    # Vrapper for VIM like editing
+    # http://vrapper.sourceforge.net/home/
+    #
+    # Python IDE for Eclipse
+    - eclipse-pydev

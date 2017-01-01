@@ -36,6 +36,7 @@
 - include: task__bluetooth.yml
 - include: task__clipboard_manager.yml
 - include: task__digital_journal.yml
+- include: task__programmingIDE.yml
 
 
 - name: Equivalent of "aptitude safe-upgrade"
