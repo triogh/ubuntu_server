@@ -4,12 +4,33 @@
   apt: name={{ item }} state=present
   with_items:
     - perl-doc
+    #
+    # Additional CPAN clients
     - libcpanplus-perl
     - cpanminus
+    #
+    # Code formating
     - perltidy
-    - html2text
+    #
+    # Code critic
     - libperl-critic-perl
+    - html2text
     #
     # perl -d:ptkdb <script_name.pl>
     - libdevel-ptkdb-perl
     - perl-tk
+
+
+# Perl-Support : Perl IDE VIM plugin
+# http://www.vim.org/scripts/script.php%3Fscript_id%3D556
+- name: Download Perl-Support VIM pluggin zip file
+  get_url:
+    url: http://www.vim.org/scripts/download_script.php?src_id=24473
+    dest: "{{ ansible_env.HOME }}/.vim"
+
+- name: Unarchive Perl-Support VIM pluggin zip file
+  unarchive:
+    src: "{{ ansible_env.HOME }}/.vim/perl-support.zip"
+    dest: "{{ ansible_env.HOME }}/.vim"
+    creates: "{{ ansible_env.HOME }}/.vim/perl-support/README.md"
+    remote_src: True
