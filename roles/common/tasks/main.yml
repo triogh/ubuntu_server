@@ -101,6 +101,11 @@
     url: https://raw.githubusercontent.com/triogh/vim/master/gvimrc
     dest: "{{ ansible_env.HOME }}/.gvimrc"
 
+- name: Download "Xdefaults" from Github
+  get_url:
+    url: https://raw.githubusercontent.com/triogh/vim/master/Xdefaults
+    dest: "{{ ansible_env.HOME }}/.Xdefaults"
+
 - name: Create temp directory for vim repo using mktemp
   command: mktemp -d
   register: tempdir_vim_repo
