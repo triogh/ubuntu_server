@@ -96,6 +96,11 @@
   stat: path={{ ansible_env.HOME }}/.vim/templates/pl.template
   register: pl_template
 
+- name: Download "gvimrc" from Github
+  get_url:
+    url: https://raw.githubusercontent.com/triogh/vim/master/gvimrc
+    dest: "{{ ansible_env.HOME }}/.gvimrc"
+
 - name: Create temp directory for vim repo using mktemp
   command: mktemp -d
   register: tempdir_vim_repo
