@@ -1,0 +1,2 @@
+# example command, replace XX with your geographical latitude:longitude
+redshift -v -t 4500:3200 -l XX:XX -b 0.93:0.7 -g 0.7
