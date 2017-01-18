@@ -13,7 +13,7 @@
 - include: task__python2.yml
 - include: task__python3.yml
 - include: task__docker.yml
-- include: task__monitorix.yml
+# - include: task__monitorix.yml
 - include: task__multimedia.yml
 - include: task__pdf.yml
 - include: task__www_browsers.yml
@@ -37,6 +37,7 @@
 - include: task__clipboard_manager.yml
 - include: task__digital_journal.yml
 - include: task__programmingIDE.yml
+- include: task__editor.yml
 
 
 - name: Equivalent of "aptitude safe-upgrade"
