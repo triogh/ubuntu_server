@@ -40,6 +40,7 @@
 - include: task__editor.yml
 - include: task__vpn.yml
 - include: task__mail.yml
+- include: task__chat.yml
 
 
 - name: Equivalent of "aptitude safe-upgrade"
