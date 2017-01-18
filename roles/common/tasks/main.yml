@@ -38,6 +38,7 @@
 - include: task__digital_journal.yml
 - include: task__programmingIDE.yml
 - include: task__editor.yml
+- include: task__vpn.yml
 
 
 - name: Equivalent of "aptitude safe-upgrade"
