@@ -1,0 +1,11 @@
+Python 101
+by Michael Driscoll
+free pdf available at http://leanpub.com/python_101
+
+Think Python 2e
+by Allen B. Downey
+free pdf available at http://greenteapress.com/wp/think-python-2e/
+
+Learning Python, 5th Edition
+by Mark Lutz
+-best by paper versionas it has 1600 pages
