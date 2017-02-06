@@ -10,3 +10,4 @@
     - pv
     - ncdu
     - makepasswd
+    - sshfs
