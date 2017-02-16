@@ -42,7 +42,7 @@
 - include: task__mail.yml
 - include: task__chat.yml
 - include: task__network_conf_tools.yml
-- include: task__php.yml
+# - include: task__php.yml
 
 
 - name: Equivalent of "aptitude safe-upgrade"
