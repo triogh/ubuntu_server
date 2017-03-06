@@ -6,6 +6,7 @@
     - perl-doc
     - html2text
     - libwww-curl-perl
+    - libcurl4-doc
     #
     # Additional CPAN clients
     - libcpanplus-perl
