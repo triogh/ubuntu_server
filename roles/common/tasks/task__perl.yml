@@ -5,6 +5,7 @@
   with_items:
     - perl-doc
     - html2text
+    - libwww-curl-perl
     #
     # Additional CPAN clients
     - libcpanplus-perl
