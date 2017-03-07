@@ -5,8 +5,13 @@
   with_items:
     - perl-doc
     - html2text
+    # unmaintained, CURLOPT_RESOLVE has bug
+    # https://github.com/szbalint/WWW--Curl/issues
     - libwww-curl-perl
     - libcurl4-doc
+    # required for Net::Curl
+    - libcurl4-gnutls-dev 
+    - pkgconf
     #
     # Additional CPAN clients
     - libcpanplus-perl
