@@ -30,6 +30,9 @@
     # Template-Toolkit
     # http://template-toolkit.org/index.html
     - libtemplate-perl
+    # graphviz diagrams (first package is graphviz itself, not strictly perl related)
+    - graphviz
+    - libgraphviz-perl
 
 
 # Perl-Support : Perl IDE VIM plugin
