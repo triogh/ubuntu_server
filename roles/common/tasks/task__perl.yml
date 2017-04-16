@@ -33,6 +33,8 @@
     # graphviz diagrams (first package is graphviz itself, not strictly perl related)
     - graphviz
     - libgraphviz-perl
+    # needed for CPAN module PAR::Packer
+    - libperl-dev
 
 
 # Perl-Support : Perl IDE VIM plugin
