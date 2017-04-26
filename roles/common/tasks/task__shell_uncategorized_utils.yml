@@ -14,3 +14,5 @@
     - httpry
     - workrave
     - shutter
+    - phantomjs
+    - mitmproxy
