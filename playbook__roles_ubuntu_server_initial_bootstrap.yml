@@ -7,4 +7,4 @@
     - "{{ ansible_env.HOME }}/.my_ansible_vars_files/vars_for__template__etc_network_interfaces.yml" 
   roles:
     - role: common
-    - role: geerlingguy.java
+    #- role: geerlingguy.java

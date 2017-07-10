@@ -3,7 +3,7 @@
   become: true
   apt: name={{ item }} state=present
   with_items:
-    - eclipse-platform
+    #- eclipse-platform
     #
     # useful additional modules (manual install for now) 
     # 
@@ -14,4 +14,4 @@
     # http://vrapper.sourceforge.net/home/
     #
     # Python IDE for Eclipse
-    - eclipse-pydev
+    #- eclipse-pydev
