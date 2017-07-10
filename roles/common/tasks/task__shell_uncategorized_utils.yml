@@ -18,3 +18,4 @@
 #    - mitmproxy # the version in repo is old, used python pip to install a newer version
     - golang-go
     - ngrep
+    - pwgen

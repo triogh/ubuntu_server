@@ -36,7 +36,7 @@
 - include: task__bluetooth.yml
 - include: task__clipboard_manager.yml
 - include: task__digital_journal.yml
-- include: task__programmingIDE.yml
+#- include: task__programmingIDE.yml
 - include: task__editor.yml
 - include: task__vpn.yml
 - include: task__mail.yml
