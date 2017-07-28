@@ -19,3 +19,4 @@
     - golang-go
     - ngrep
     - pwgen
+    - inetutils-traceroute
