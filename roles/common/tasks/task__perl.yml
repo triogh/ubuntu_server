@@ -39,6 +39,8 @@
     - libxml-libxml-perl
     - libjson-perl
     - libjson-xs-perl
+    # for scrollback in Perl debugger
+    - libterm-readline-gnu-perl
 
 
 # Perl-Support : Perl IDE VIM plugin
