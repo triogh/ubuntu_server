@@ -43,16 +43,16 @@
     - libterm-readline-gnu-perl
 
 
-# Perl-Support : Perl IDE VIM plugin
-# http://www.vim.org/scripts/script.php%3Fscript_id%3D556
-- name: Download Perl-Support VIM pluggin zip file
-  get_url:
-    url: http://www.vim.org/scripts/download_script.php?src_id=24473
-    dest: "{{ ansible_env.HOME }}/.vim"
-
-- name: Unarchive Perl-Support VIM pluggin zip file
-  unarchive:
-    src: "{{ ansible_env.HOME }}/.vim/perl-support.zip"
-    dest: "{{ ansible_env.HOME }}/.vim"
-    creates: "{{ ansible_env.HOME }}/.vim/perl-support/README.md"
-    remote_src: True
+## Perl-Support : Perl IDE VIM plugin
+## http://www.vim.org/scripts/script.php%3Fscript_id%3D556
+#- name: Download Perl-Support VIM pluggin zip file
+#  get_url:
+#    url: http://www.vim.org/scripts/download_script.php?src_id=24473
+#    dest: "{{ ansible_env.HOME }}/.vim"
+#
+#- name: Unarchive Perl-Support VIM pluggin zip file
+#  unarchive:
+#    src: "{{ ansible_env.HOME }}/.vim/perl-support.zip"
+#    dest: "{{ ansible_env.HOME }}/.vim"
+#    creates: "{{ ansible_env.HOME }}/.vim/perl-support/README.md"
+#    remote_src: True
