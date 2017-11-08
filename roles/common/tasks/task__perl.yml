@@ -41,6 +41,8 @@
     - libjson-xs-perl
     # for scrollback in Perl debugger
     - libterm-readline-gnu-perl
+    #
+    - libsmart-comments-perl
 
 
 ## Perl-Support : Perl IDE VIM plugin
