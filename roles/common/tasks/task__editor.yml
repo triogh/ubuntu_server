@@ -5,4 +5,5 @@
   with_items:
     - vim
     - vim-gtk
+    - vim-fugitive
     - emacs
