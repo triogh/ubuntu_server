@@ -24,3 +24,5 @@
     - vim-scripts
     - vim-syntastic
     - vim-tabular
+    - sqliteman
+    - sqlitebrowser
