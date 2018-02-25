@@ -27,3 +27,5 @@
     - sqliteman
     - sqlitebrowser
     - mutt
+    - hunspell
+    - abook
