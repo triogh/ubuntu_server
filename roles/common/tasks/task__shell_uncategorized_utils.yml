@@ -27,6 +27,7 @@
     - sqliteman
     - sqlitebrowser
     - mutt
+    - mutt-patched
     - hunspell
     - abook
     - msmtp
