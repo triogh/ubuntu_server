@@ -172,8 +172,8 @@
 - name: nameserver_2
   debug: var=nameserver_2
 
-- name: Write /etc/network/interfaces with static IP and nameservers 
-  become: True
-  template: src=template__etc_network_interfaces.j2 dest=/etc/network/interfaces backup=yes
-  notify:
-    - restart networking
+#- name: Write /etc/network/interfaces with static IP and nameservers 
+#  become: True
+#  template: src=template__etc_network_interfaces.j2 dest=/etc/network/interfaces backup=yes
+#  notify:
+#    - restart networking
