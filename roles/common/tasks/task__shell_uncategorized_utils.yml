@@ -5,7 +5,7 @@
   with_items:
     - tree
     - dict
-    - wine
+#    - wine
     - smartmontools
     - pv
     - ncdu
@@ -24,10 +24,10 @@
     - vim-scripts
     - vim-syntastic
     - vim-tabular
-    - sqliteman
+#    - sqliteman
     - sqlitebrowser
     - mutt
-    - mutt-patched
+#    - mutt-patched
     - hunspell
     - abook
     - msmtp

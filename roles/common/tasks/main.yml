@@ -8,11 +8,11 @@
 - include: task__awesomeWM.yml
 - include: task__sound.yml
 - include: task__virtualization.yml 
-- include: task__nfs_client.yml
+# - include: task__nfs_client.yml
 - include: task__perl.yml
 - include: task__python2.yml
 - include: task__python3.yml
-- include: task__docker.yml
+# - include: task__docker.yml
 # - include: task__monitorix.yml
 - include: task__multimedia.yml
 - include: task__pdf.yml
